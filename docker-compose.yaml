@@ -3,3 +3,7 @@ services:
     build: .
     ports:
       - "8000:8080"
+  client: 
+    build: ./AgentFront/Agent.Api
+    ports:
+      - "5173:80"
