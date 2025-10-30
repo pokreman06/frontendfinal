@@ -1,0 +1,9 @@
+# .dockerignore
+**/bin
+**/obj
+.vs
+*.user
+*.suo
+.git
+.gitignore
+docker-desktop*
