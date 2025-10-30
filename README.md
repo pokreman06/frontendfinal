@@ -55,6 +55,10 @@ Features:
 
 #### Delivered
 
+Rubric items:  
+- CI/CD pipeline I want my CI/CD pipeline to submit a very basic form of my app alongside layout into an app hosted on the class kubernetes server
+I got about half of this working soo...
+This might be a week of me trying to do
 ### Nov 1
 
 #### Estimates  
