@@ -34,11 +34,10 @@ jobs:
       # ---------------- Client ----------------
       - name: Build client image
         run: |
-          docker build \
-            -f /AgentFront/Agent.Api/Dockerfile \
-            -t nhowell02/agentclient:$TAG \
-            -t nhowell02/agentclient:$COMMIT_TAG \
-            .
+          docker build -f AgentFront/Agent.Api/Dockerfile \
+          -t nhowell02/agentclient:$TAG \
+          ./AgentFront/Agent.Api
+
 
       - name: Push client image
         run: |
