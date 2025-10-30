@@ -42,17 +42,14 @@ jobs:
       - name: Push client image
         run: |
           docker push nhowell02/agentclient:$TAG
-          docker push nhowell02/agentclient:$COMMIT_TAG
 
       # ---------------- Server ----------------
       - name: Build server image
         run: |
           docker build \
             -t nhowell02/agentserver:$TAG \
-            -t nhowell02/agentserver:$COMMIT_TAG \
             .
 
       - name: Push server image
         run: |
           docker push nhowell02/agentserver:$TAG
-          docker push nhowell02/agentserver:$COMMIT_TAG
