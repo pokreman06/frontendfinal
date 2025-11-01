@@ -59,7 +59,7 @@ jobs:
         needs: [build-and-push]
         steps:
         - name: deploy to kubernetes
-          working-directory: Kubernetes
+          working-directory: ./Kubernetes
           run: |
             export NAMESPACE=${{github.event.pull_request.number}}-
             export SUBDOMAIN=${{github.event.pull_request.number}}.
