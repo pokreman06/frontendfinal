@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: client-ingress
+  namespace: nate-agent
+spec:
+  rules:
+  - host: ".duckdns.org"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: zas-grafana-svc
+            port:
+              number: 8080

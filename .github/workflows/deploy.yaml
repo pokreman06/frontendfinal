@@ -53,3 +53,18 @@ jobs:
       - name: Push server image
         run: |
           docker push nhowell02/agentserver:$TAG
+  
+  pushtokubernetes:
+        runs-on: self-hosted
+        needs: [pushtodocker]
+        steps:
+        - name: deploy to kubernetes
+          run: |
+            export NAMESPACE=${{github.event.pull_request.number}}-
+            export SUBDOMAIN=${{github.event.pull_request.number}}.
+            export BUILD_NUMBER=${{github.run_id}}
+
+            for FILE in "K8s"/*
+            do
+              cat "$FILE" | envsubst | kubectl apply -f -
+            done
