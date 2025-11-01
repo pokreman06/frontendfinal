@@ -64,7 +64,7 @@ jobs:
             export SUBDOMAIN=${{github.event.pull_request.number}}.
             export BUILD_NUMBER=${{github.run_id}}
 
-            for FILE in "K8s"/*
+            for FILE in "Kubernetes"/*
             do
               cat "$FILE" | envsubst | kubectl apply -f -
             done
