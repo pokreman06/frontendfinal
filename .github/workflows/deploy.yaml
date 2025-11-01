@@ -58,8 +58,9 @@ jobs:
         runs-on: self-hosted
         needs: [build-and-push]
         steps:
-        - name: print file structure
-          run: ls
+        - name: Checkout repository
+          uses: actions/checkout@v4
+          
         - name: deploy to kubernetes
           run: |
             export NAMESPACE=${{github.event.pull_request.number}}-
