@@ -57,6 +57,7 @@ jobs:
   pushtokubernetes:
         runs-on: self-hosted
         needs: [build-and-push]
+        working-directory: Kubernetes
         steps:
         - name: deploy to kubernetes
           run: |
@@ -64,7 +65,7 @@ jobs:
             export SUBDOMAIN=${{github.event.pull_request.number}}.
             export BUILD_NUMBER=${{github.run_id}}
 
-            for FILE in "./Kubernetes"/*
+            for FILE in *
             do
               cat "$FILE" | envsubst | kubectl apply -f -
             done
