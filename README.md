@@ -64,12 +64,10 @@ This might be a week of me trying to do
 #### Estimates  
 
 Rubric Items:
-- Input: work on getting a simple page to make requests start with image generation/use generic form
 - Error handling: get toasts working for all failed requests
 
 Features:
-- an Image generation ai: hook up the app to the image generator host locally
-- Have backend communicate with the image generator to "pass that along"
+
 
 ### Nov 5
 
@@ -88,9 +86,11 @@ Features:
 #### Estimates  
 
 Rubric Items: 
+- Input: work on getting a simple page to make requests start with image generation/use generic form
 - Error handling on api errors
 
 Features:
+- an Image generation ai: hook up the app to the image generator host locally
 - Make another screen for ai chatting but specifically for word creation purposes
 
 ### Nov 12
