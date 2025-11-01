@@ -58,8 +58,9 @@ jobs:
         runs-on: self-hosted
         needs: [build-and-push]
         steps:
+        - name: print file structure
+          run: ls
         - name: deploy to kubernetes
-          working-directory: ./Kubernetes
           run: |
             export NAMESPACE=${{github.event.pull_request.number}}-
             export SUBDOMAIN=${{github.event.pull_request.number}}.
