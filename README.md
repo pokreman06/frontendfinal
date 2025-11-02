@@ -68,6 +68,11 @@ Rubric Items:
 
 Features:
 
+#### Delivered
+
+Rubric Items
+- I got the app hosted on the kubernetes server
+- I got a toaster/apiClient set up on my project
 
 ### Nov 5
 
