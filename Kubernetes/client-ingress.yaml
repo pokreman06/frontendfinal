@@ -12,6 +12,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: zas-grafana-svc
+            name: client-service
             port:
               number: 80

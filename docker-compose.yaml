@@ -4,6 +4,6 @@ services:
     ports:
       - "8000:8080"
   client: 
-    build: ./AgentFront/Agent.Api
+    build: nhowell02/agentclient:latest
     ports:
       - "5173:80"
