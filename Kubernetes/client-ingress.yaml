@@ -6,6 +6,7 @@ metadata:
 spec:
   rules:
   - host: "client.nagent.duckdns.org"
+    ingressClassName: nginx
     http:
       paths:
       - path: /
