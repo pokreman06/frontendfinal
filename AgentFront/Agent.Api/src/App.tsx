@@ -8,6 +8,7 @@ function App() {
   const failRequest = async () => {
     await fetch('http://localhost:4444/api/nonexistent-endpoint');
   };
+  failRequest();
   return (
     <>
       <div>
