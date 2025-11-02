@@ -4,19 +4,19 @@ metadata:
   namespace: nate-agent
   name: client-deployment
   labels:
-    app: client
+    app: client-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: client
+      app: client-deployment
   template:
     metadata:
       labels:
-        app: client
+        app: client-deployment
     spec:
       containers:
-      - name: client
+      - name: client-deployment
         image: nhowell02/agentclient:latest
         ports:
         - containerPort: 80
