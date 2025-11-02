@@ -1,12 +1,19 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
+import { apiClient } from './query/apiClient'
 import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
   const failRequest = async () => {
-    await fetch('http://localhost:4444/api/nonexistent-endpoint');
+    try {
+      await apiClient('/nonexistent-endpoint', {
+        method: 'GET',
+      });
+    } catch (error) {
+      console.error('Expected error occurred:', error);
+    }
   };
   failRequest();
   return (
