@@ -5,7 +5,7 @@ metadata:
   namespace: nate-agent
 spec:
   rules:
-  - host: ".duckdns.org"
+  - host: "client.nagent.duckdns.org"
     http:
       paths:
       - path: /
