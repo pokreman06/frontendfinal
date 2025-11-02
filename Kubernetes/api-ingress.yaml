@@ -4,9 +4,9 @@ metadata:
   name: api-ingress
   namespace: nate-agent
 spec:
+  ingressClassName: nginx
   rules:
   - host: "api.nagent.duckdns.org"
-    ingressClassName: nginx
     http:
       paths:
       - path: /
