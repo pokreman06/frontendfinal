@@ -61,10 +61,7 @@ jobs:
         steps:
         - name: deploy to kubernetes
           run: |
-            export NAMESPACE=${{github.event.pull_request.number}}-
-            export SUBDOMAIN=${{github.event.pull_request.number}}.
-            export BUILD_NUMBER=${{github.run_id}}
-
+            kubectl get namespace nate-agent || kubectl create namespace nate-agent
             for FILE in *
             do
               cat "$FILE" | envsubst | kubectl apply -f -
