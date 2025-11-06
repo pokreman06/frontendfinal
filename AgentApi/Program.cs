@@ -29,6 +29,7 @@ var summaries = new[]
 };
 
 app.MapGet("/", () => "hello world");
+app.MapGet("/user", (MyDbContext context) => { return context.Users; });
 app.MapGet("/weatherforecast", () =>
 {
     var forecast =  Enumerable.Range(1, 5).Select(index =>
