@@ -69,3 +69,7 @@ jobs:
             do
               cat "$FILE" | envsubst | kubectl apply -f -
             done
+
+              # Pipe to kubectl apply
+              $expanded | kubectl apply -f -
+            }
