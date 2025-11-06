@@ -28,13 +28,14 @@ createRoot(document.getElementById('root')!).render(
 )
 function RequireAuth({ children }: { children: JSX.Element }) {
   const auth = useAuth();
+  const [redirecting, setRedirecting] = React.useState(false);
 
-  // Redirect once when unauthenticated
   React.useEffect(() => {
-    if (!auth.isLoading && !auth.isAuthenticated) {
+    if (!auth.isLoading && !auth.isAuthenticated && !redirecting) {
+      setRedirecting(true);
       auth.signinRedirect().catch(err => console.error("Signin redirect error:", err));
     }
-  }, [auth.isLoading, auth.isAuthenticated, auth]);
+  }, [auth.isLoading, auth.isAuthenticated, auth, redirecting]);
 
   if (auth.isLoading) return <div>Loading...</div>;
   if (!auth.isAuthenticated) return <div>Redirecting to login...</div>;
