@@ -17,8 +17,26 @@ public class MyDbContext : DbContext
             entity.Property(e => e.Username).HasColumnName("username");
             entity.Property(e => e.Email).HasColumnName("email");
         });
+                modelBuilder.Entity<Post>(entity =>
+        {
+            entity.ToTable("posts");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasMany(p => p.ImagePreferences)
+                  .WithOne(ip => ip.Post)
+                  .HasForeignKey(ip => ip.PostId);
+        });
+
+        // ImagePreferences table
+        modelBuilder.Entity<ImagePreference>(entity =>
+        {
+            entity.ToTable("image_preferences");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.PostId).HasColumnName("post_id");
+            entity.Property(e => e.Preference).HasColumnName("preference");
+        });
     }
-    // Define your tables
     public DbSet<User> Users { get; set; }
 }
 
@@ -29,3 +47,20 @@ public class User
     public string Email { get; set; } = string.Empty;     // matches TEXT NOT NULL UNIQUE
 }
 
+public class Post
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
+    
+    public ICollection<ImagePreference> ImagePreferences { get; set; } = new List<ImagePreference>();
+}
+
+public class ImagePreference
+{
+    public int Id { get; set; }
+    public int PostId { get; set; }
+    public Post Post { get; set; } = null!;
+    
+    public string Preference { get; set; } = string.Empty;
+}

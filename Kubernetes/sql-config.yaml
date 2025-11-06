@@ -5,9 +5,26 @@ metadata:
   namespace: nate-agent
 data:
   init.sql: |
+    -- Users table (existing)
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       username TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE
     );
-    INSERT INTO users (username, email) VALUES ('nate', 'nate@example.com');
+
+    INSERT INTO users (username, email) 
+    VALUES ('nate', 'nate@example.com')
+    ON CONFLICT DO NOTHING;
+
+    -- Minimal Posts table
+    CREATE TABLE IF NOT EXISTS posts (
+      id SERIAL PRIMARY KEY,
+      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    -- Image preferences table (just stores a string) per post
+    CREATE TABLE IF NOT EXISTS image_preferences (
+      id SERIAL PRIMARY KEY,
+      post_id INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      preference TEXT NOT NULL
+    );
