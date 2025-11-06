@@ -9,7 +9,7 @@ import React from 'react';
 const oidcConfig = {
   authority: "https://auth-dev.snowse.io/realms/DevRealm",
   client_id: "nagent",
-  redirect_uri: "http://client.nagent.duckdns.org/",
+  redirect_uri: "http://client.nagent.duckdns.org",
   response_type: "code",
 };
 
