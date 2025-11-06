@@ -10,7 +10,13 @@ public class MyDbContext : DbContext
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<User>().ToTable("users"); // match SQL table name
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.ToTable("users");           // lowercase table name
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Username).HasColumnName("username");
+            entity.Property(e => e.Email).HasColumnName("email");
+        });
     }
     // Define your tables
     public DbSet<User> Users { get; set; }
