@@ -4,6 +4,7 @@ import './index.css'
 import { Toaster } from 'react-hot-toast';
 import App from './App.tsx'
 import { AuthProvider, useAuth } from "react-oidc-context";
+import React from 'react';
 
 const oidcConfig = {
   authority: "https://auth-dev.snowse.io/realms/DevRealm",
@@ -28,15 +29,15 @@ createRoot(document.getElementById('root')!).render(
 function RequireAuth({ children }: { children: JSX.Element }) {
   const auth = useAuth();
 
+  // Redirect once when unauthenticated
+  React.useEffect(() => {
+    if (!auth.isLoading && !auth.isAuthenticated) {
+      auth.signinRedirect().catch(err => console.error("Signin redirect error:", err));
+    }
+  }, [auth.isLoading, auth.isAuthenticated, auth]);
+
   if (auth.isLoading) return <div>Loading...</div>;
-  if (!auth.isAuthenticated) {
-    
-    auth.signinRedirect();
-    return <div>Redirecting to login...</div>;
-  }
-  if (!auth.isAuthenticated) {
-    return <div>Redirecting to login...</div>;
-  }
+  if (!auth.isAuthenticated) return <div>Redirecting to login...</div>;
 
   return children;
 }
