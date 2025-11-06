@@ -11,9 +11,9 @@ string connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
                           ?? builder.Configuration.GetConnectionString("DefaultConnection")!;
 
 
-var app = builder.Build();
 builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseNpgsql(connectionString));
+var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
