@@ -1,4 +1,4 @@
-import { StrictMode} from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { Toaster } from 'react-hot-toast';
@@ -20,13 +20,10 @@ createRoot(document.getElementById('root')!).render(
     
       <Toaster position="top-right" reverseOrder={false} />
         <App />
-
+        
   </StrictMode>
 )
 // function RequireAuth({ children }: { children: JSX.Element }) {
-  {/* <RequireAuth>
-  </RequireAuth> */}
-  {/* </AuthProvider> */}
 //   const auth = useAuth();
 //   const [redirecting, setRedirecting] = React.useState(false);
 

@@ -15,8 +15,12 @@ spec:
       labels:
         app: api-deployment
     spec:
-      containers:
-      - name: api-deployment
-        image: nhowell02/agentserver:latest
-        ports:
-        - containerPort: 8080
+containers:
+  - name: api-deployment
+    image: nhowell02/agentserver:latest
+    ports:
+      - containerPort: 8080
+    env:
+      - name: DATABASE_URL
+        value: "Host=postgres.nate-agent.svc.cluster.local;Port=5432;Database=mydb;Username=myuser;Password=mypassword"
+

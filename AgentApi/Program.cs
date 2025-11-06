@@ -1,8 +1,15 @@
+using Microsoft.EntityFrameworkCore;
+using Npgsql; // Make sure you have Npgsql package installed
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+string connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
+                          ?? builder.Configuration.GetConnectionString("DefaultConnection")!;
+
 
 var app = builder.Build();
 
