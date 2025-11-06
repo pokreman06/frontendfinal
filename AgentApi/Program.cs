@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql; // Make sure you have Npgsql package installed
-
+using Contexts;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -12,6 +12,8 @@ string connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
 
 
 var app = builder.Build();
+builder.Services.AddDbContext<MyDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
