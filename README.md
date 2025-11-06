@@ -86,6 +86,12 @@ Features:
 - Have backend communicate with the image generator to "pass that along"
 - Make the page size modular for the image screen
 
+
+## Delivered
+Set up the database for persistance and I have alot of the stuff in place for frontend security.
+
+
+
 ### Nov 8
 
 #### Estimates  
