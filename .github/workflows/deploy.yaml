@@ -61,6 +61,9 @@ jobs:
         - name: Checkout repository
           uses: actions/checkout@v4
           
+        - name: deploy to kubernetes
+          working-directory: Kubernetes
+          run: |
             kubectl get namespace nate-agent || kubectl create namespace nate-agent
             for FILE in *
             do
