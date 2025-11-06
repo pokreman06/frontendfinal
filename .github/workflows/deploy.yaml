@@ -61,21 +61,11 @@ jobs:
         - name: Checkout repository
           uses: actions/checkout@v4
           
-        - name: Deploy to Kubernetes (Windows PowerShell)
-          working-directory: Kubernetes
-          shell: pwsh
-          run: |
-            # Check if namespace exists, create if missing
-            if (-not (kubectl get namespace nate-agent -ErrorAction SilentlyContinue)) {
-              kubectl create namespace nate-agent
-            }
-
-            # Loop through each file in the folder
-            Get-ChildItem -File | ForEach-Object {
-              $fileContent = Get-Content $_.FullName -Raw
-
-              # Perform environment variable substitution manually (envsubst equivalent)
-              $expanded = [Environment]::ExpandEnvironmentVariables($fileContent)
+            kubectl get namespace nate-agent || kubectl create namespace nate-agent
+            for FILE in *
+            do
+              cat "$FILE" | envsubst | kubectl apply -f -
+            done
 
               # Pipe to kubectl apply
               $expanded | kubectl apply -f -
