@@ -2,21 +2,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Contexts;
 
-    public class MyDbContext : DbContext
+public class MyDbContext : DbContext
+{
+    public MyDbContext(DbContextOptions<MyDbContext> options)
+        : base(options)
     {
-        public MyDbContext(DbContextOptions<MyDbContext> options)
-            : base(options)
-        {
-        }
-
-        // Define your tables
-        public DbSet<User> Users { get; set; }
     }
-
-    public class User
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        public int Id { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
+        modelBuilder.Entity<User>().ToTable("users"); // match SQL table name
     }
+    // Define your tables
+    public DbSet<User> Users { get; set; }
+}
+
+public class User
+{
+    public int Id { get; set; }          // matches SERIAL PRIMARY KEY
+    public string Username { get; set; } = string.Empty;  // matches TEXT NOT NULL
+    public string Email { get; set; } = string.Empty;     // matches TEXT NOT NULL UNIQUE
+}
 
