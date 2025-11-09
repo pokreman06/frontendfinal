@@ -8,9 +8,10 @@ import App from './App.tsx'
 const oidcConfig = {
   authority: "https://auth-dev.snowse.io/realms/DevRealm",
   client_id: "nagent",
-  redirect_uri: "http://client.nagent.duckdns.org",
+  redirect_uri: "http://client.nagent.duckdns.org/",  // Added trailing slash
+  post_logout_redirect_uri: "http://client.nagent.duckdns.org/", // Added for logout
   response_type: "code",
-  scope: "openid profile email",
+  scope: "openid profile email", // Added scope
   onSigninCallback: () => {
     window.history.replaceState({}, document.title, window.location.pathname);
   },
