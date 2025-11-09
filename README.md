@@ -104,6 +104,9 @@ Features:
 - an Image generation ai: hook up the app to the image generator host locally
 - Make another screen for ai chatting but specifically for word creation purposes
 
+## Delivered
+man I shouldn't have put all the image stuff up at the front.
+- I got the account stuff worked on. (not necessarily styling still have a bit to go on that)
 ### Nov 12
 
 #### Estimates  

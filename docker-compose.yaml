@@ -3,7 +3,17 @@ services:
     build: .
     ports:
       - "8000:8080"
+  
   client: 
-    build: ./AgentFront/Agent.Api
+    build: 
+      context: ./AgentFront/Agent.Api
+      dockerfile: Dockerfile
+      args:
+        VITE_OIDC_AUTHORITY: "https://auth-dev.snowse.io/realms/DevRealm"
+        VITE_OIDC_CLIENT_ID: "nathan_react"
+        VITE_OIDC_REDIRECT_URI: "http://localhost:5173/"
+        VITE_OIDC_POST_LOGOUT_REDIRECT_URI: "http://localhost:5173/"
+        VITE_OIDC_RESPONSE_TYPE: "code"
+        VITE_OIDC_SCOPE: "openid profile email"
     ports:
       - "5173:80"
