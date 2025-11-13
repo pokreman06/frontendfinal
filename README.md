@@ -117,6 +117,14 @@ Rubric Items:
 Features:
 - Make a specify image themes page
 - manage collection of image themes
+### Delivered
+
+Rubric Items:
+- Work on getting ai hooked up with FB with https://github.com/HagaiHen/facebook-mcp-server
+
+Features:
+- Make a specify image themes page
+- manage collection of image themes
 
 ### Nov 15
 

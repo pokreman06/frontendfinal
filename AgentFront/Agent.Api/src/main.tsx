@@ -4,7 +4,7 @@ import './index.css'
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from 'react-oidc-context';
 import App from './App.tsx'
-
+import { ImagePreferencesProvider } from './contexts/image_preferences_context.tsx';
 // Load OIDC config from environment variables with defaults
 const oidcConfig = {
   authority: import.meta.env.VITE_OIDC_AUTHORITY || "https://auth-dev.snowse.io/realms/DevRealm",
@@ -20,9 +20,12 @@ const oidcConfig = {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider {...oidcConfig}>
-      <Toaster position="top-right" reverseOrder={false} />
-      <App />
-    </AuthProvider>
+    <ImagePreferencesProvider>
+
+      <AuthProvider {...oidcConfig}>
+        <Toaster position="top-right" reverseOrder={false} />
+        <App />
+      </AuthProvider>
+    </ImagePreferencesProvider>
   </StrictMode>
 )

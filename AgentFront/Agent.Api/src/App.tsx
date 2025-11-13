@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
+import ImagePreferencesPage from "./pages/image_preferences_page";
 
 function App() {
   const auth = useAuth();
@@ -64,7 +65,9 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="imagepreference" element={<ImagePreferencesPage/>} />
           <Route path="*" element={<Navigate to="/" replace />} />
+
         </Route>
       </Routes>
     </BrowserRouter>
