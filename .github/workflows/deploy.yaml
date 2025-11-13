@@ -57,7 +57,7 @@ jobs:
       - name: Build MCP server image
         run: |
           docker build -f Agent.mcp/Dockerfile \
-            -t nhowell02/agentmcp:$TAG \
+            -t nhowell02/nagent_mcp:$TAG \
             ./Agent.mcp
 
       - name: Push MCP server image
