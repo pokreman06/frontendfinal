@@ -17,3 +17,12 @@ services:
         VITE_OIDC_SCOPE: "openid profile email"
     ports:
       - "5173:80"
+
+  fastmcp:
+    build: /Agent.mcp/.
+    container_name: fastmcp_server
+    ports:
+      - "25565:25565"
+    volumes:
+      - ./data:/app/data  
+    restart: unless-stopped

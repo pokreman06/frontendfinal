@@ -53,6 +53,16 @@ jobs:
       - name: Push server image
         run: |
           docker push nhowell02/agentserver:$TAG
+      # ------------------ MCP ------------------
+      - name: Build MCP server image
+        run: |
+          docker build -f Agent.mcp/Dockerfile \
+            -t nhowell02/agentmcp:$TAG \
+            ./Agent.mcp
+
+      - name: Push MCP server image
+        run: |
+          docker push nhowell02/nagent_mcp:$TAG
   
   pushtokubernetes:
         runs-on: self-hosted
