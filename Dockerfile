@@ -19,6 +19,13 @@ RUN dotnet publish -c release -o /app
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 
+# Ensure Kestrel binds to 0.0.0.0:8080 inside the container so port mapping works
+ENV ASPNETCORE_URLS="http://+:8080"
+# Indicate the app is running in a container
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+# Default environment (can be overridden by Docker/K8s at runtime)
+ENV DOTNET_ENVIRONMENT=Production
+
 # Install Python
 RUN apt-get update && \
     apt-get install -y python3 python3-pip python3-venv && \

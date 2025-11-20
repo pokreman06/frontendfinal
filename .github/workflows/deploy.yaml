@@ -40,9 +40,11 @@ jobs:
       # ---------------- Client ----------------
       - name: Build client image
         run: |
+          # Build frontend with VITE_API_URL baked in for the deployed backend service
           docker build -f AgentFront/Agent.Api/Dockerfile \
-          -t nhowell02/agentclient:$TAG \
-          ./AgentFront/Agent.Api
+            --build-arg VITE_API_URL="http://api-deployment.nate-agent.svc.cluster.local:8080" \
+            -t nhowell02/agentclient:$TAG \
+            ./AgentFront/Agent.Api
 
 
       - name: Push client image

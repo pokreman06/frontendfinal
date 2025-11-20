@@ -20,5 +20,20 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            # Prefer Kubernetes Secret for sensitive values. Create a secret named `nate-agent-secrets`
+            # with keys: DATABASE_URL, GOOGLE_API, CUSTOM_SEARCH_ENGINE
             - name: DATABASE_URL
-              value: "Host=postgres.nate-agent.svc.cluster.local;Port=5432;Database=mydb;Username=myuser;Password=mypassword"
+              valueFrom:
+                secretKeyRef:
+                  name: nate-agent-secrets
+                  key: DATABASE_URL
+            - name: GOOGLE_API
+              valueFrom:
+                secretKeyRef:
+                  name: nate-agent-secrets
+                  key: GOOGLE_API
+            - name: CUSTOM_SEARCH_ENGINE
+              valueFrom:
+                secretKeyRef:
+                  name: nate-agent-secrets
+                  key: CUSTOM_SEARCH_ENGINE

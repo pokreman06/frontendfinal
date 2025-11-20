@@ -3,6 +3,9 @@ services:
     build: 
       context: .
     environment:
+      # For local development you can set DATABASE_URL to point to a local or remote DB.
+      # Example: "Host=host.docker.internal;Port=5432;Database=mydb;Username=myuser;Password=mypassword"
+      DATABASE_URL: "Host=postgres.local;Port=5432;Database=mydb;Username=myuser;Password=mypassword"
       GOOGLE_API: AIzaSyD6ZjtfC8q-RLrvqxDnDLmCLj8Imbvyyj8
       CUSTOM_SEARCH_ENGINE: f642808a9e0124077
     ports:
@@ -13,6 +16,8 @@ services:
       context: ./AgentFront/Agent.Api
       dockerfile: Dockerfile
       args:
+        # Provide the API URL used by the built frontend (Vite build time)
+        VITE_API_URL: "http://api-deployment.nate-agent.svc.cluster.local:8080"
         VITE_OIDC_AUTHORITY: "https://auth-dev.snowse.io/realms/DevRealm"
         VITE_OIDC_CLIENT_ID: "nathan_react"
         VITE_OIDC_REDIRECT_URI: "http://localhost:5173/"

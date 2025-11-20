@@ -21,3 +21,7 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 80
+        # Note: the frontend is a static build (Vite). The `VITE_API_URL` must be
+        # baked into the image at build time. In CI we pass it as a build-arg.
+        # If you want runtime-configurable values, implement a small runtime
+        # env-config.js served by nginx and loaded by the app.
