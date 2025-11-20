@@ -17,6 +17,7 @@ spec:
     spec:
       containers:
       - name: client-deployment
-        image: nhowell02/agentclient:latest
+        image: nhowell02/agentclient:${TAG}
+        imagePullPolicy: Always
         ports:
         - containerPort: 80

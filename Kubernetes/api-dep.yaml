@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: api-deployment
-          image: nhowell02/agentserver:latest
+          image: nhowell02/agentserver:${TAG}
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:

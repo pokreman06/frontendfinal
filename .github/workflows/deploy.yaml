@@ -10,6 +10,9 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+
 
     steps:
       - name: Checkout repo
@@ -27,9 +30,12 @@ jobs:
       - name: Set image tags
         id: vars
         run: |
-          # Use short SHA as tag or increment manually
-          echo "TAG=latest" >> $GITHUB_ENV
-          echo "COMMIT_TAG=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+          # Use short SHA as the image tag (unique per commit)
+          COMMIT_TAG=$(echo $GITHUB_SHA | cut -c1-7)
+          echo "COMMIT_TAG=${COMMIT_TAG}" >> $GITHUB_ENV
+          echo "TAG=${COMMIT_TAG}" >> $GITHUB_ENV
+          # expose the tag as a job output for downstream jobs
+          echo "tag=${COMMIT_TAG}" >> $GITHUB_OUTPUT
 
       # ---------------- Client ----------------
       - name: Build client image
@@ -65,21 +71,20 @@ jobs:
           docker push nhowell02/nagent_mcp:$TAG
   
   pushtokubernetes:
-        runs-on: self-hosted
-        needs: [build-and-push]
-        steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
-          
-        - name: deploy to kubernetes
-          working-directory: Kubernetes
-          run: |
-            kubectl get namespace nate-agent || kubectl create namespace nate-agent
-            for FILE in *
-            do
-              cat "$FILE" | envsubst | kubectl apply -f -
-            done
+    runs-on: self-hosted
+    needs: [build-and-push]
+    env:
+      TAG: ${{ needs.build-and-push.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-              # Pipe to kubectl apply
-              $expanded | kubectl apply -f -
-            }
+      - name: deploy to kubernetes
+        working-directory: Kubernetes
+        run: |
+          set -eu
+          kubectl get namespace nate-agent || kubectl create namespace nate-agent
+          for FILE in *; do
+            # substitute TAG into manifests and apply
+            envsubst < "$FILE" | kubectl apply -f -
+          done

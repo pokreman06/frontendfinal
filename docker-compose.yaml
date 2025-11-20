@@ -1,6 +1,10 @@
 services:
   web:
-    build: .
+    build: 
+      context: .
+    environment:
+      GOOGLE_API: AIzaSyD6ZjtfC8q-RLrvqxDnDLmCLj8Imbvyyj8
+      CUSTOM_SEARCH_ENGINE: f642808a9e0124077
     ports:
       - "8000:8080"
   
@@ -19,7 +23,7 @@ services:
       - "5173:80"
 
   # fastmcp:
-  #   build: /Agent.mcp/.
+  #   build: ./Agent.mcp/.
   #   container_name: fastmcp_server
   #   ports:
   #     - "25565:25565"

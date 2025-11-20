@@ -1,6 +1,159 @@
-@AgentApi_HostAddress = http://localhost:5070
+### Variables
+@baseUrl = http://localhost:8000
+@apiUrl = {{baseUrl}}/api/agent
 
-GET {{AgentApi_HostAddress}}/weatherforecast/
-Accept: application/json
+### base
+GET {{baseUrl}}/api/search/search?query=example
+
+### base
+GET {{baseUrl}}/api/search/health
+
+### Health Check
+GET {{baseUrl}}/api/agent/health
+
+### Get Available MCP Tools
+GET {{apiUrl}}/tools
+
+### Simple Chat Request
+POST {{apiUrl}}/chat
+Content-Type: application/json
+
+{
+  "userMessage": "Hello, can you help me?",
+  "conversationHistory": null,
+  "model": "default"
+}
+
+### Chat with Model Specified
+POST {{apiUrl}}/chat
+Content-Type: application/json
+
+{
+  "userMessage": "What's the weather like today?",
+  "conversationHistory": null,
+  "model": "gpt-4"
+}
+
+### Chat with Conversation History
+POST {{apiUrl}}/chat
+Content-Type: application/json
+
+{
+  "userMessage": "What did I just ask you about?",
+  "conversationHistory": [
+    {
+      "role": "user",
+      "content": "Tell me about the weather"
+    },
+    {
+      "role": "assistant",
+      "content": "I'd be happy to help with weather information!"
+    }
+  ]
+}
+
+### Test MCP Tool Usage (Facebook Example)
+POST {{apiUrl}}/chat
+Content-Type: application/json
+
+{
+  "userMessage": "Can you check my Facebook notifications?",
+  "conversationHistory": null
+}
+
+### Multi-turn Conversation
+POST {{apiUrl}}/chat
+Content-Type: application/json
+
+{
+  "userMessage": "My name is Alice",
+  "conversationHistory": null
+}
 
 ###
+POST {{apiUrl}}/chat
+Content-Type: application/json
+
+{
+  "userMessage": "What's my name?",
+  "conversationHistory": [
+    {
+      "role": "user",
+      "content": "My name is Alice"
+    },
+    {
+      "role": "assistant",
+      "content": "Nice to meet you, Alice!"
+    }
+  ]
+}
+
+### Test Error Handling - Empty Message
+POST {{apiUrl}}/chat
+Content-Type: application/json
+
+{
+  "userMessage": "",
+  "conversationHistory": null
+}
+
+### Test with Complex Request
+POST {{apiUrl}}/chat
+Content-Type: application/json
+
+{
+  "userMessage": "Can you help me with multiple tasks: 1) Check my notifications, 2) Tell me a joke, 3) What's 2+2?",
+  "conversationHistory": null,
+  "model": "default"
+}
+
+### Test Long Conversation History
+POST {{apiUrl}}/chat
+Content-Type: application/json
+
+{
+  "userMessage": "Summarize our conversation so far",
+  "conversationHistory": [
+    {
+      "role": "user",
+      "content": "Hello"
+    },
+    {
+      "role": "assistant",
+      "content": "Hi there! How can I help?"
+    },
+    {
+      "role": "user",
+      "content": "Tell me about AI"
+    },
+    {
+      "role": "assistant",
+      "content": "AI stands for Artificial Intelligence..."
+    },
+    {
+      "role": "user",
+      "content": "That's interesting"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm glad you find it interesting! Would you like to know more?"
+    }
+  ]
+}
+
+### ===== Kubernetes/Production Tests =====
+### (Change baseUrl to your production URL)
+
+### Production Health Check
+# @baseUrl = https://your-domain.com
+GET {{baseUrl}}/api/agent/health
+
+### Production Chat Test
+# @baseUrl = https://your-domain.com
+POST {{apiUrl}}/chat
+Content-Type: application/json
+
+{
+  "userMessage": "Hello from production!",
+  "conversationHistory": null
+}
