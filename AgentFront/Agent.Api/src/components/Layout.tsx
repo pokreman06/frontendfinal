@@ -54,6 +54,16 @@ function Layout() {
               >
                 Profile
               </Link>
+              <Link
+                to="/query-themes"
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  isActive("/query-themes")
+                    ? "bg-indigo-50 text-indigo-700 font-medium"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                Query Themes
+              </Link>
             </div>
 
             {/* User Menu */}

@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage";
 import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import ImagePreferencesPage from "./pages/image_preferences_page";
+import QueryThemesPage from "./pages/QueryThemesPage";
 
 function App() {
   const auth = useAuth();
@@ -65,6 +66,7 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="query-themes" element={<QueryThemesPage/>} />
           <Route path="imagepreference" element={<ImagePreferencesPage/>} />
           <Route path="*" element={<Navigate to="/" replace />} />
 

@@ -136,6 +136,10 @@ Rubric Items:
 Features:
 - Make a specify post themes page
 
+### Delivered
+
+I now have the google api hooked up with my app as well as a rudimentary search themes page
+
 ### Nov 22
 
 #### Estimates  
