@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
+import { loadQueryThemes, saveQueryThemes } from "../query/apiClient";
 
 type Theme = {
   id: string;
   text: string;
 };
-
-const STORAGE_KEY = "google_query_themes";
 
 function uid() {
   return Math.random().toString(36).slice(2, 9);
@@ -17,22 +16,28 @@ export default function QueryThemesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        setItems(JSON.parse(raw));
+    let mounted = true;
+    (async () => {
+      try {
+        const loaded = await loadQueryThemes();
+        if (!mounted) return;
+        setItems(loaded.map((t) => ({ id: uid(), text: t })));
+      } catch (e) {
+        console.error("Failed to load themes:", e);
       }
-    } catch (e) {
-      console.error("Failed to load themes:", e);
-    }
+    })();
+    return () => { mounted = false; };
   }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch (e) {
-      console.error("Failed to save themes:", e);
-    }
+    // Persist to API (or fallback to localStorage) whenever items change
+    (async () => {
+      try {
+        await saveQueryThemes(items.map((i) => i.text));
+      } catch (e) {
+        console.error("Failed to save themes:", e);
+      }
+    })();
   }, [items]);
 
   function addOrUpdate() {

@@ -2,10 +2,13 @@ services:
   web:
     build: 
       context: .
+    depends_on:
+      - postgres
     environment:
       # For local development you can set DATABASE_URL to point to a local or remote DB.
       # Example: "Host=host.docker.internal;Port=5432;Database=mydb;Username=myuser;Password=mypassword"
-      DATABASE_URL: "Host=postgres.local;Port=5432;Database=mydb;Username=myuser;Password=mypassword"
+      # Use the compose service name 'postgres' so DNS resolves inside the compose network
+      DATABASE_URL: "Host=postgres;Port=5432;Database=mydb;Username=myuser;Password=mypassword"
       GOOGLE_API: AIzaSyD6ZjtfC8q-RLrvqxDnDLmCLj8Imbvyyj8
       CUSTOM_SEARCH_ENGINE: f642808a9e0124077
     ports:
@@ -17,7 +20,7 @@ services:
       dockerfile: Dockerfile
       args:
         # Provide the API URL used by the built frontend (Vite build time)
-        VITE_API_URL: "http://api-deployment.nate-agent.svc.cluster.local:8080"
+        VITE_API_URL: "localhost:8000"
         VITE_OIDC_AUTHORITY: "https://auth-dev.snowse.io/realms/DevRealm"
         VITE_OIDC_CLIENT_ID: "nathan_react"
         VITE_OIDC_REDIRECT_URI: "http://localhost:5173/"
@@ -35,3 +38,18 @@ services:
   #   volumes:
   #     - ./data:/app/data  
   #   restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:

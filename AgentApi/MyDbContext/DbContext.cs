@@ -36,8 +36,17 @@ public class MyDbContext : DbContext
             entity.Property(e => e.PostId).HasColumnName("post_id");
             entity.Property(e => e.Preference).HasColumnName("preference");
         });
+
+        // Query themes table
+        modelBuilder.Entity<QueryTheme>(entity =>
+        {
+            entity.ToTable("query_themes");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Text).HasColumnName("text");
+        });
     }
     public DbSet<User> Users { get; set; }
+    public DbSet<QueryTheme> QueryThemes { get; set; }
 }
 
 public class User
@@ -63,4 +72,10 @@ public class ImagePreference
     public Post Post { get; set; } = null!;
     
     public string Preference { get; set; } = string.Empty;
+}
+
+public class QueryTheme
+{
+    public int Id { get; set; }
+    public string Text { get; set; } = string.Empty;
 }

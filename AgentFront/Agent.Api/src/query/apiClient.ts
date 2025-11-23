@@ -1,7 +1,24 @@
 import toast from "react-hot-toast";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:4444";
+// Determine API base URL with precedence:
+// 1. `import.meta.env.VITE_API_URL` (build-time env)
+// 2. If running in the browser on localhost -> use local backend `http://localhost:4444`
+// 3. Otherwise default to the public API host `https://api.nagent.duckdns.org`
+function resolveApiBase() {
+  const envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "");
+  if (envUrl) return envUrl;
+
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") {
+      return "http://localhost:8000";
+    }
+  }
+
+  return "https://api.nagent.duckdns.org";
+}
+
+const API_BASE_URL = resolveApiBase();
 
 export type ApiClientOptions = RequestInit & { baseUrl?: string };
 
@@ -40,5 +57,41 @@ export async function apiClient<T>(
     console.error("API fetch failed:", err);
     toast.error("Network error");
     throw err;
+  }
+}
+
+// Theme helpers: try the backend first, fall back to localStorage
+const THEME_STORAGE_KEY = "google_query_themes";
+
+export async function loadQueryThemes(): Promise<string[]> {
+  try {
+    // Expect backend to return { themes: string[] }
+    const data = await apiClient<{ themes: string[] }>("/query-themes");
+    return data?.themes ?? [];
+  } catch (err) {
+    console.warn("loadQueryThemes: falling back to localStorage", err);
+    try {
+      const raw = localStorage.getItem(THEME_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.error("loadQueryThemes: localStorage parse failed", e);
+      return [];
+    }
+  }
+}
+
+export async function saveQueryThemes(themes: string[]): Promise<void> {
+  try {
+    await apiClient<void>("/query-themes", {
+      method: "POST",
+      body: JSON.stringify({ themes }),
+    });
+  } catch (err) {
+    console.warn("saveQueryThemes: API save failed, using localStorage", err);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themes));
+    } catch (e) {
+      console.error("saveQueryThemes: localStorage save failed", e);
+    }
   }
 }
