@@ -4,7 +4,7 @@ using Contexts;
 namespace AgentApi.Controllers;
 
 [ApiController]
-[Route("query-themes")]
+[Route("api/query-themes")]
 public class QueryThemesController : ControllerBase
 {
     private readonly MyDbContext _context;

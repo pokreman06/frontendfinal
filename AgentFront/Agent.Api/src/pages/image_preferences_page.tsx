@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useImagePreferences } from '../contexts/image_preferences_context';
+import { apiClient } from '../query/apiClient';
 
 function ImagePreferencesPage() {
   const {
@@ -34,6 +35,29 @@ function ImagePreferencesPage() {
 
   const activeThemes = getActiveThemes();
   const activeMoods = getActiveMoods();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [images, setImages] = useState<any[]>([]);
+  const [loadingImages, setLoadingImages] = useState(false);
+  const [selected, setSelected] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem('selected_images');
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
+
+  useEffect(() => {
+    // default search query built from first active theme and mood
+    if (!searchQuery) {
+      const t = activeThemes[0]?.name;
+      const m = activeMoods[0]?.name;
+      if (t || m) setSearchQuery([m, t].filter(Boolean).join(' '));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const previewText = activeThemes.length > 0 && activeMoods.length > 0
+    ? `A ${activeMoods[Math.floor(Math.random() * activeMoods.length)]?.name.toLowerCase()} ${activeThemes[Math.floor(Math.random() * activeThemes.length)]?.name.toLowerCase()} style image`
+    : "Select themes and moods to see preview";
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -233,12 +257,78 @@ function ImagePreferencesPage() {
         </h3>
         <div className="bg-white rounded-lg p-4 border border-gray-200">
           <p className="text-sm text-gray-600 mb-2">Your active preferences would generate queries like:</p>
-          <p className="text-gray-900 font-mono text-sm">
-            {activeThemes.length > 0 && activeMoods.length > 0 
-              ? `"A ${activeMoods[Math.floor(Math.random() * activeMoods.length)]?.name.toLowerCase()} ${activeThemes[Math.floor(Math.random() * activeThemes.length)]?.name.toLowerCase()} style image"`
-              : "Select themes and moods to see preview"}
-          </p>
+          <p className="text-gray-900 font-mono text-sm">{previewText}</p>
         </div>
+      </div>
+
+      {/* Image Search */}
+      <div className="mt-8 bg-white rounded-xl p-6 border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold">Search Images</h2>
+          <div className="text-sm text-gray-500">Powered by Pixabay</div>
+        </div>
+
+        <div className="flex space-x-2 mb-4">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search images (e.g. 'vibrant cyberpunk')"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+          />
+          <button
+            onClick={async () => {
+              if (!searchQuery.trim()) return;
+              try {
+                setLoadingImages(true);
+                const qs = new URLSearchParams({ q: searchQuery, per_page: '24' }).toString();
+                const data = await apiClient<any>(`/images/search?${qs}`);
+                // Pixabay returns { hits: [...] }
+                setImages(data?.hits || []);
+              } catch (e) {
+                console.error(e);
+              } finally {
+                setLoadingImages(false);
+              }
+            }}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
+          >
+            Search
+          </button>
+          <button
+            onClick={() => {
+              const toSave = Object.keys(selected).filter(k => selected[k]);
+              localStorage.setItem('selected_images', JSON.stringify(selected));
+              alert(`Saved ${toSave.length} selected images to localStorage`);
+            }}
+            className="px-4 py-2 bg-gray-100 rounded-lg"
+          >
+            Save Selected
+          </button>
+        </div>
+
+        {loadingImages ? (
+          <div className="text-gray-600">Loading images...</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {images.map((img) => (
+              <div key={img.id} className="relative">
+                <img src={img.previewURL} alt={img.tags} className="w-full h-32 object-cover rounded-lg" />
+                <button
+                  onClick={() => setSelected(s => ({ ...s, [img.id]: !s[img.id] }))}
+                  className={`absolute top-2 right-2 p-1 rounded-full border-2 ${selected[img.id] ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-gray-200'}`}
+                >
+                  {selected[img.id] ? (
+                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                  ) : (
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+                  )}
+                </button>
+                <div className="mt-1 text-xs text-gray-600">{img.user}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

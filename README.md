@@ -150,8 +150,11 @@ Features:
 - have the agent be able to pull textual data from sites or pdf links to parse
 - final post page: page to treat with final post
   
+  ## Delivered
 
+I have gotten the image pulling all hooked up.
 ### Nov 25
+
 
 #### Estimates  
 

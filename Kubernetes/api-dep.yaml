@@ -37,3 +37,8 @@ spec:
                 secretKeyRef:
                   name: nate-agent-secrets
                   key: CUSTOM_SEARCH_ENGINE
+            - name: PIXABAY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nate-agent-secrets
+                  key: PIXABAY_API_KEY

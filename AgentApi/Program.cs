@@ -13,6 +13,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+// Configure CORS so the frontend dev server (Vite) can call the API
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("LocalDev", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 string connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
                           ?? builder.Configuration.GetConnectionString("DefaultConnection")!;
@@ -33,8 +43,12 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-app.MapControllers();
 app.UseHttpsRedirection();
+
+// Enable CORS using the policy defined above
+app.UseCors("LocalDev");
+
+app.MapControllers();
 
 // Ensure database is created at startup (creates tables if missing).
 using (var scope = app.Services.CreateScope())

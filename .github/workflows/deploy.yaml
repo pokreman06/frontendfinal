@@ -37,12 +37,21 @@ jobs:
           # expose the tag as a job output for downstream jobs
           echo "tag=${COMMIT_TAG}" >> $GITHUB_OUTPUT
 
+      - name: Prepare env (VITE_API_URL)
+        run: |
+          # If repository secret VITE_API_URL is set, use it; otherwise default to the public host
+          if [ -n "${{ secrets.VITE_API_URL }}" ]; then
+            echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> $GITHUB_ENV
+          else
+            echo "VITE_API_URL=https://api.nagent.duckdns.org" >> $GITHUB_ENV
+          fi
+
       # ---------------- Client ----------------
       - name: Build client image
         run: |
           # Build frontend with VITE_API_URL baked in for the deployed backend service
           docker build -f AgentFront/Agent.Api/Dockerfile \
-            --build-arg VITE_API_URL="http://api-deployment.nate-agent.svc.cluster.local:8080" \
+            --build-arg VITE_API_URL="$VITE_API_URL" \
             -t nhowell02/agentclient:$TAG \
             ./AgentFront/Agent.Api
 
@@ -77,6 +86,11 @@ jobs:
     needs: [build-and-push]
     env:
       TAG: ${{ needs.build-and-push.outputs.tag }}
+      # Inject sensitive values from GitHub Secrets into the deploy step so envsubst can substitute them
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      GOOGLE_API: ${{ secrets.GOOGLE_API }}
+      CUSTOM_SEARCH_ENGINE: ${{ secrets.CUSTOM_SEARCH_ENGINE }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

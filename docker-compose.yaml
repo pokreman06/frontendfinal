@@ -11,6 +11,7 @@ services:
       DATABASE_URL: "Host=postgres;Port=5432;Database=mydb;Username=myuser;Password=mypassword"
       GOOGLE_API: AIzaSyD6ZjtfC8q-RLrvqxDnDLmCLj8Imbvyyj8
       CUSTOM_SEARCH_ENGINE: f642808a9e0124077
+      PIXABAY_API_KEY: ${PIXABAY_API_KEY}
     ports:
       - "8000:8080"
   

@@ -5,8 +5,25 @@ import toast from "react-hot-toast";
 // 2. If running in the browser on localhost -> use local backend `http://localhost:4444`
 // 3. Otherwise default to the public API host `https://api.nagent.duckdns.org`
 function resolveApiBase() {
-  const envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "");
-  if (envUrl) return envUrl;
+  const raw = import.meta.env.VITE_API_URL as string | undefined;
+  const envUrl = raw?.replace(/\/$/, "");
+  if (envUrl) {
+    // If env already includes a scheme, use it as-is
+    if (/^https?:\/\//i.test(envUrl)) return envUrl;
+
+    // If the env value looks like a localhost/host:port or an IP, prefer http
+    if (
+      envUrl.startsWith("localhost") ||
+      envUrl.startsWith("127.") ||
+      envUrl.startsWith("0.") ||
+      /:\d+$/.test(envUrl)
+    ) {
+      return `http://${envUrl}`;
+    }
+
+    // Otherwise assume https
+    return `https://${envUrl}`;
+  }
 
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
