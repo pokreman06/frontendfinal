@@ -42,3 +42,13 @@ spec:
                 secretKeyRef:
                   name: nate-agent-secrets
                   key: PIXABAY_API_KEY
+            - name: KEYCLOAK_AUTHORITY
+              valueFrom:
+                secretKeyRef:
+                  name: nate-agent-secrets
+                  key: KEYCLOAK_AUTHORITY
+            - name: KEYCLOAK_AUDIENCE
+              valueFrom:
+                secretKeyRef:
+                  name: nate-agent-secrets
+                  key: KEYCLOAK_AUDIENCE

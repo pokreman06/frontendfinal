@@ -91,6 +91,8 @@ jobs:
       GOOGLE_API: ${{ secrets.GOOGLE_API }}
       CUSTOM_SEARCH_ENGINE: ${{ secrets.CUSTOM_SEARCH_ENGINE }}
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      KEYCLOAK_AUTHORITY: ${{ secrets.KEYCLOAK_AUTHORITY }}
+      KEYCLOAK_AUDIENCE: ${{ secrets.KEYCLOAK_AUDIENCE }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

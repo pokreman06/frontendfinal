@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Contexts;
 
 namespace AgentApi.Controllers;
 
 [ApiController]
 [Route("api/query-themes")]
+[Authorize]
 public class QueryThemesController : ControllerBase
 {
     private readonly MyDbContext _context;

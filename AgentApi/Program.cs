@@ -7,22 +7,51 @@ using Microsoft.Extensions.Hosting;
 using AgentApi.Services;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using AgentApi.Services.SearchValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-// Configure CORS so the frontend dev server (Vite) can call the API
+// Configure CORS so the frontend (dev and production) can call the API with credentials
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("LocalDev", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+        policy.WithOrigins(
+                "http://localhost:5173", 
+                "http://127.0.0.1:5173",
+                "https://client.nagent.duckdns.org",
+                "http://client.nagent.duckdns.org"
+              )
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials(); // Allow credentials (cookies, auth headers)
     });
 });
+
+// Configure JWT authentication with Keycloak
+var keycloakAuthority = Environment.GetEnvironmentVariable("KEYCLOAK_AUTHORITY") 
+                        ?? "https://auth-dev.snowse.io/realms/DevRealm";
+var keycloakAudience = Environment.GetEnvironmentVariable("KEYCLOAK_AUDIENCE") ?? "nagent";
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = keycloakAuthority;
+        options.Audience = keycloakAudience;
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+        };
+    });
 
 string connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
                           ?? builder.Configuration.GetConnectionString("DefaultConnection")!;
@@ -47,6 +76,10 @@ app.UseHttpsRedirection();
 
 // Enable CORS using the policy defined above
 app.UseCors("LocalDev");
+
+// Enable authentication and authorization
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

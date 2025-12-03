@@ -39,20 +39,41 @@ const API_BASE_URL = resolveApiBase();
 
 export type ApiClientOptions = RequestInit & { baseUrl?: string };
 
+// Helper to get the auth token from sessionStorage (set by the auth context)
+function getAuthToken(): string | null {
+  try {
+    const authData = sessionStorage.getItem("oidc.user:https://auth-dev.snowse.io/realms/DevRealm:nagent");
+    if (authData) {
+      const user = JSON.parse(authData);
+      return user.access_token || null;
+    }
+  } catch (e) {
+    console.debug("Failed to retrieve auth token from sessionStorage", e);
+  }
+  return null;
+}
+
 export async function apiClient<T>(
   input: string,
   options: ApiClientOptions = {}
 ): Promise<T> {
     const baseUrl = options.baseUrl ?? `${API_BASE_URL}/api`;
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(options.headers || {}),
+    ...(options.headers as Record<string, string> || {}),
   };
+
+  // Add Authorization header if we have a token
+  const token = getAuthToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
 
   try {
     const res = await fetch(`${baseUrl}${input}`, {
       ...options,
       headers,
+      credentials: "include", // Include cookies if needed
     });
 
     if (!res.ok) {

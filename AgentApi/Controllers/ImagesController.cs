@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using AgentApi.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 
@@ -12,6 +13,7 @@ namespace AgentApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ImagesController : ControllerBase
     {
         private readonly IHttpClientFactory _httpFactory;
