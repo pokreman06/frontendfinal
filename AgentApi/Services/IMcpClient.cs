@@ -8,5 +8,6 @@ namespace AgentApi.Services
     {
         Task<List<FunctionTool>> GetAvailableToolsAsync();
         Task<string> ExecuteToolAsync(string toolName, Dictionary<string, object> parameters);
+        Task<bool> HealthCheckAsync();
     }
 }

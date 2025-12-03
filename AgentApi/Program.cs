@@ -48,7 +48,8 @@ builder.Services
         {
             ValidateIssuerSigningKey = true,
             ValidateIssuer = true,
-            ValidateAudience = true,
+            // Disable audience validation for local development
+            ValidateAudience = !builder.Environment.IsDevelopment(),
             ValidateLifetime = true,
         };
     });
@@ -57,22 +58,36 @@ string connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
                           ?? builder.Configuration.GetConnectionString("DefaultConnection")!;
 
 builder.Services.AddSingleton(new PromptSearcher(Environment.GetEnvironmentVariable("GOOGLE_API"), Environment.GetEnvironmentVariable("CUSTOM_SEARCH_ENGINE")));
+builder.Services.AddScoped<WebPageFetcher>();
 builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 builder.Services.AddHttpClient<ILocalAIService, LocalAIService>(client =>
 {
-    client.BaseAddress = new Uri("https://ai-snow.reindeer-pinecone.ts.net/");
+    client.BaseAddress = new Uri("http://ai-snow.reindeer-pinecone.ts.net:9292/");
     client.Timeout = TimeSpan.FromMinutes(5); // Longer timeout for local models
 });
-builder.Services.AddSingleton<IMcpClient, McpClient>();
+
+// Register MCP Client with factory pattern
+builder.Services.AddHttpClient<McpClient>(client =>
+{
+    var mcpServiceUrl = Environment.GetEnvironmentVariable("MCP_SERVICE_URL") ?? "http://facebook-mcp-service:8000";
+    client.BaseAddress = new Uri(mcpServiceUrl);
+    client.Timeout = TimeSpan.FromMinutes(2);
+});
+builder.Services.AddScoped<IMcpClient>(provider => provider.GetRequiredService<McpClient>());
 var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-app.UseHttpsRedirection();
+
+// Only enforce HTTPS redirection in production where HTTPS is correctly terminated
+if (app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
 
 // Enable CORS using the policy defined above
 app.UseCors("LocalDev");
@@ -89,11 +104,6 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<MyDbContext>();
     db.Database.EnsureCreated();
 }
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
 
 app.MapGet("/", () => "hello world");
 app.MapGet("/user", (MyDbContext context) => { return context.Users; });

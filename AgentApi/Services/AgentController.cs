@@ -7,8 +7,15 @@ public class PromptSearcher(string key, string id)
     {
         return !string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(id);
     }
-    public async Task<List<string>> GetQuery(string query)
+    
+    public async Task<List<string>> GetQuery(string query, string? fileType = null)
     {
+        // Add file type filter if specified (e.g., pdf, doc, ppt, xls)
+        if (!string.IsNullOrEmpty(fileType))
+        {
+            query = $"{query} filetype:{fileType}";
+        }
+        
         var customSearchService = new CustomSearchAPIService(new
          BaseClientService.Initializer{
             ApiKey = key

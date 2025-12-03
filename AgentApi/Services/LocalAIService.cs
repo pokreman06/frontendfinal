@@ -25,7 +25,7 @@ namespace AgentApi.Services
                 _logger.LogInformation("Sending request to local AI with {MessageCount} messages", 
                     request.Messages.Count);
 
-                var response = await _httpClient.PostAsJsonAsync("api/v1/chat/completions", request);
+                var response = await _httpClient.PostAsJsonAsync("v1/chat/completions", request);
                 
                 if (!response.IsSuccessStatusCode)
                 {

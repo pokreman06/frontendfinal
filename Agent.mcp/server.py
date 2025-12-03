@@ -1,9 +1,31 @@
 from mcp.server.fastmcp import FastMCP
 from manager import Manager
 from typing import Any
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+import uvicorn
+import logging
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Create FastAPI app for HTTP service
+app = FastAPI(
+    title="Facebook MCP Service",
+    description="Facebook Page Management Service",
+    version="1.0.0"
+)
+
+# MCP Server for tool protocol
 mcp = FastMCP("FacebookMCP")
 manager = Manager()
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "FacebookMCP"}
 
 @mcp.tool()
 def post_to_facebook(message: str) -> dict[str, Any]:
@@ -273,4 +295,147 @@ def bulk_delete_comments(comment_ids: list[str]) -> list[dict[str, Any]]:
 def bulk_hide_comments(comment_ids: list[str]) -> list[dict[str, Any]]:
     """Hide multiple comments by ID."""
     return manager.bulk_hide_comments(comment_ids)
+
+
+# HTTP endpoints mapping MCP tools
+@app.post("/api/post")
+async def post_message(message: str):
+    """Create a new Facebook Page post"""
+    try:
+        result = manager.post_to_facebook(message)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Error posting message: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/api/post-image")
+async def post_image(image_url: str, caption: str):
+    """Post an image with caption to Facebook"""
+    try:
+        result = manager.post_image_to_facebook(image_url, caption)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Error posting image: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/api/reply")
+async def reply_to_comment(post_id: str, comment_id: str, message: str):
+    """Reply to a comment"""
+    try:
+        result = manager.reply_to_comment(post_id, comment_id, message)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Error replying to comment: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.get("/api/posts")
+async def get_posts():
+    """Fetch page posts"""
+    try:
+        result = manager.get_page_posts()
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Error fetching posts: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.get("/api/posts/{post_id}/comments")
+async def get_comments(post_id: str):
+    """Get comments for a post"""
+    try:
+        result = manager.get_post_comments(post_id)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Error fetching comments: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.delete("/api/posts/{post_id}")
+async def delete_post(post_id: str):
+    """Delete a post"""
+    try:
+        result = manager.delete_post(post_id)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Error deleting post: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.get("/api/posts/{post_id}/insights")
+async def get_insights(post_id: str):
+    """Get post insights"""
+    try:
+        result = manager.get_post_insights(post_id)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Error fetching insights: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.get("/api/posts/{post_id}/reactions")
+async def get_reactions(post_id: str):
+    """Get post reactions breakdown"""
+    try:
+        result = manager.get_post_reactions_breakdown(post_id)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Error fetching reactions: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.delete("/api/comments/{comment_id}")
+async def delete_comment(comment_id: str):
+    """Delete a comment"""
+    try:
+        result = manager.delete_comment(comment_id)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Error deleting comment: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/api/comments/{comment_id}/hide")
+async def hide_comment(comment_id: str):
+    """Hide a comment"""
+    try:
+        result = manager.hide_comment(comment_id)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Error hiding comment: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/api/messages")
+async def send_dm(user_id: str, message: str):
+    """Send direct message to user"""
+    try:
+        result = manager.send_dm_to_user(user_id, message)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Error sending message: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.get("/api/stats")
+async def get_page_stats():
+    """Get page statistics"""
+    try:
+        fan_count = manager.get_page_fan_count()
+        return JSONResponse(content={"fan_count": fan_count})
+    except Exception as e:
+        logger.error(f"Error fetching stats: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+if __name__ == "__main__":
+    # Run as HTTP service with uvicorn
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        log_level="info"
+    )
 

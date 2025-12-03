@@ -18,9 +18,11 @@ namespace AgentApi.Models
         public int MaxTokens { get; set; } = 2048;
 
         [JsonPropertyName("tools")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public List<FunctionTool>? Tools { get; set; }
 
         [JsonPropertyName("tool_choice")]
-        public string? ToolChoice { get; set; } = "auto";
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? ToolChoice { get; set; }
     }
 }

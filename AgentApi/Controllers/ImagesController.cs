@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -8,27 +9,33 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting;
+using Contexts;
 
 namespace AgentApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    // TODO: Re-enable [Authorize] for production deployment
+    // [Authorize] // Currently disabled for local development
     public class ImagesController : ControllerBase
     {
         private readonly IHttpClientFactory _httpFactory;
         private readonly ILogger<ImagesController> _logger;
+        private readonly MyDbContext _context;
 
         // Default key provided here for convenience; recommend setting PIXABAY_API_KEY in env instead.
         private const string DefaultPixabayKey = "53370365-c00eb9836164b05a464c41762";
 
-        public ImagesController(IHttpClientFactory httpFactory, ILogger<ImagesController> logger)
+        public ImagesController(IHttpClientFactory httpFactory, ILogger<ImagesController> logger, MyDbContext context)
         {
             _httpFactory = httpFactory;
             _logger = logger;
+            _context = context;
         }
 
         [HttpGet("search")]
+        [AllowAnonymous]
         public async Task<IActionResult> Search([FromQuery] ImageSearchParams query)
         {
             try
@@ -111,6 +118,157 @@ namespace AgentApi.Controllers
             };
 
             return Ok(func);
+        }
+
+        [HttpPost("upload")]
+        public async Task<IActionResult> Upload(IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { error = "No file provided" });
+                }
+
+                // Validate file type
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (!allowedExtensions.Contains(extension))
+                {
+                    return BadRequest(new { error = "Invalid file type. Allowed: jpg, jpeg, png, gif, webp" });
+                }
+
+                // Limit file size to 10MB
+                if (file.Length > 10 * 1024 * 1024)
+                {
+                    return BadRequest(new { error = "File too large. Maximum size: 10MB" });
+                }
+
+                // Read file data into memory
+                byte[] fileData;
+                using (var memoryStream = new MemoryStream())
+                {
+                    await file.CopyToAsync(memoryStream);
+                    fileData = memoryStream.ToArray();
+                }
+
+                // Generate unique filename
+                var fileName = $"{Guid.NewGuid()}{extension}";
+
+                // Save to database
+                var savedImage = new Contexts.SavedImage
+                {
+                    FileName = fileName,
+                    OriginalName = file.FileName,
+                    ContentType = file.ContentType,
+                    Data = fileData,
+                    Size = file.Length,
+                    UploadedAt = DateTime.UtcNow
+                };
+
+                _context.SavedImages.Add(savedImage);
+                await _context.SaveChangesAsync();
+
+                // Return the URL
+                var baseUrl = $"{Request.Scheme}://{Request.Host}";
+                var imageUrl = $"{baseUrl}/api/images/{savedImage.Id}";
+
+                _logger.LogInformation("Image uploaded to database: {FileName} (ID: {Id})", file.FileName, savedImage.Id);
+
+                return Ok(new
+                {
+                    url = imageUrl,
+                    id = savedImage.Id,
+                    fileName = fileName,
+                    originalName = file.FileName,
+                    size = file.Length,
+                    uploadedAt = savedImage.UploadedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading image");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("saved")]
+        [AllowAnonymous]
+        public IActionResult GetSavedImages()
+        {
+            try
+            {
+                // Provide both browser-accessible URL and Docker-network URL
+                var browserBaseUrl = $"{Request.Scheme}://{Request.Host}";
+                var dockerBaseUrl = "http://web:8080";
+                
+                var images = _context.SavedImages
+                    .OrderByDescending(i => i.UploadedAt)
+                    .Select(i => new
+                    {
+                        url = $"{browserBaseUrl}/api/images/{i.Id}",  // For browser display
+                        dockerUrl = $"{dockerBaseUrl}/api/images/{i.Id}",  // For MCP service
+                        id = i.Id,
+                        fileName = i.FileName,
+                        originalName = i.OriginalName,
+                        size = i.Size,
+                        uploadedAt = i.UploadedAt
+                    })
+                    .ToList();
+
+                return Ok(new { images });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving saved images");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}")]
+        [AllowAnonymous]
+        public IActionResult GetImage(int id)
+        {
+            try
+            {
+                var image = _context.SavedImages.Find(id);
+                if (image == null)
+                {
+                    return NotFound();
+                }
+
+                return File(image.Data, image.ContentType);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving image: {Id}", id);
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpDelete("saved/{id}")]
+        public IActionResult DeleteImage(int id)
+        {
+            try
+            {
+                var image = _context.SavedImages.Find(id);
+                if (image == null)
+                {
+                    return NotFound(new { error = "Image not found" });
+                }
+
+                _context.SavedImages.Remove(image);
+                _context.SaveChanges();
+                
+                _logger.LogInformation("Image deleted from database: {Id}", id);
+
+                return Ok(new { message = "Image deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting image: {Id}", id);
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
     }
 

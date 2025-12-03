@@ -157,3 +157,9 @@ Content-Type: application/json
   "userMessage": "Hello from production!",
   "conversationHistory": null
 }
+
+###
+GET https://graph.facebook.com/v19.0/oauth/access_token?grant_type=fb_exchange_token&client_id=1171357117753434&client_secret=104ea39fb06a64c8b86d47428d97743a&fb_exchange_token=EAAQpV9ToqFoBQC02sKZCgLTSbE48v5qwZAqYyaMPXdUIN07CbQaVTVbzonDrSksgZAKsFuMBwPSpZCxwZBnglw4LbDSwxhdMXbjyb9k8vZCBIFDxS1TNM6HBYqAOn2rgm6vdKzrausdNsfVONdqBpbylg4ysHzX4M7pHvPj5qE7x7TeH2VlV0Gd67kjO4BhDd8NHxEkDQxIanFIjJLNDL9wkLBGc3oc7h9Gz9iQCBCN40ZD
+
+### Exchange Long-Lived Token
+GET https://graph.facebook.com/v19.0/me?fields=id,name&access_token=EAAQpV9ToqFoBQN4VQZBZBSBqtEuGOqY1lrJSw6jPamdZBiSmBoyj2H89t7cIKiL6mgBMjZC9x2eRsi2VgxgjbBcMAbyPwGOzIixmhl8nWxBiNhPXnuWlzQGzxgJWsKPajBiyvkkf8dypAmjTWIqwUjZAJynw7oMsQwQIgeRgX2jkqFWN9XZAiiHNyamVm3xFeYe2Jv

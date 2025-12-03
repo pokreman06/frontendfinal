@@ -31,14 +31,24 @@ services:
     ports:
       - "5173:80"
 
-  # fastmcp:
-  #   build: ./Agent.mcp/.
-  #   container_name: fastmcp_server
-  #   ports:
-  #     - "25565:25565"
-  #   volumes:
-  #     - ./data:/app/data  
-  #   restart: unless-stopped
+  facebook-mcp-service:
+    build:
+      context: ./Agent.mcp
+      dockerfile: Dockerfile
+    container_name: facebook-mcp-service
+    ports:
+      - "8001:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - ./Agent.mcp/.env:/app/.env:ro
 
   postgres:
     image: postgres:15

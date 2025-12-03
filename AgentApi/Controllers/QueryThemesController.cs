@@ -6,7 +6,8 @@ namespace AgentApi.Controllers;
 
 [ApiController]
 [Route("api/query-themes")]
-[Authorize]
+// TODO: Re-enable [Authorize] for production deployment
+// [Authorize] // Currently disabled for local development
 public class QueryThemesController : ControllerBase
 {
     private readonly MyDbContext _context;

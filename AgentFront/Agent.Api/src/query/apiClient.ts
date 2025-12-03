@@ -37,7 +37,7 @@ function resolveApiBase() {
 
 const API_BASE_URL = resolveApiBase();
 
-export type ApiClientOptions = RequestInit & { baseUrl?: string };
+export type ApiClientOptions = RequestInit & { baseUrl?: string; suppressToast?: boolean };
 
 // Helper to get the auth token from sessionStorage (set by the auth context)
 function getAuthToken(): string | null {
@@ -82,7 +82,9 @@ export async function apiClient<T>(
         const data = await res.json();
         message = data.error || data.message || message;
       } catch {}
-      toast.error(message);
+      if (!options.suppressToast) {
+        toast.error(message);
+      }
       throw new Error(message);
     }
 
@@ -92,8 +94,10 @@ export async function apiClient<T>(
     }
     return null as unknown as T;
   } catch (err) {
-    console.error("API fetch failed:", err);
-    toast.error("Network error");
+    if (!options.suppressToast) {
+      console.error("API fetch failed:", err);
+      toast.error("Network error");
+    }
     throw err;
   }
 }
@@ -104,7 +108,7 @@ const THEME_STORAGE_KEY = "google_query_themes";
 export async function loadQueryThemes(): Promise<string[]> {
   try {
     // Expect backend to return { themes: string[] }
-    const data = await apiClient<{ themes: string[] }>("/query-themes");
+    const data = await apiClient<{ themes: string[] }>("/query-themes", { suppressToast: true });
     return data?.themes ?? [];
   } catch (err) {
     console.warn("loadQueryThemes: falling back to localStorage", err);

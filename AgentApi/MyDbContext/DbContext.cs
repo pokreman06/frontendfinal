@@ -44,9 +44,23 @@ public class MyDbContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Text).HasColumnName("text");
         });
+
+        // Saved images table
+        modelBuilder.Entity<SavedImage>(entity =>
+        {
+            entity.ToTable("saved_images");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.FileName).HasColumnName("file_name");
+            entity.Property(e => e.OriginalName).HasColumnName("original_name");
+            entity.Property(e => e.ContentType).HasColumnName("content_type");
+            entity.Property(e => e.Data).HasColumnName("data");
+            entity.Property(e => e.Size).HasColumnName("size");
+            entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at");
+        });
     }
     public DbSet<User> Users { get; set; }
     public DbSet<QueryTheme> QueryThemes { get; set; }
+    public DbSet<SavedImage> SavedImages { get; set; }
 }
 
 public class User
@@ -78,4 +92,15 @@ public class QueryTheme
 {
     public int Id { get; set; }
     public string Text { get; set; } = string.Empty;
+}
+
+public class SavedImage
+{
+    public int Id { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string OriginalName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public byte[] Data { get; set; } = Array.Empty<byte>();
+    public long Size { get; set; }
+    public DateTime UploadedAt { get; set; }
 }

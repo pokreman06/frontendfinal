@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  facebook-mcp-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: facebook-mcp-service
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    volumes:
+      # Optional: Mount .env file for credentials
+      - ./.env:/app/.env:ro
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

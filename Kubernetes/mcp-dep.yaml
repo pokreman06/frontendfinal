@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-deployment
+  namespace: nate-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-deployment
+  template:
+    metadata:
+      labels:
+        app: mcp-deployment
+    spec:
+      containers:
+        - name: mcp-deployment
+          image: nhowell02/agentmcp:${TAG}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            # Facebook API credentials from secret
+            - name: FACEBOOK_PAGE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: nate-agent-secrets
+                  key: FACEBOOK_PAGE_ID
+            - name: FACEBOOK_PAGE_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: nate-agent-secrets
+                  key: FACEBOOK_PAGE_ACCESS_TOKEN
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20

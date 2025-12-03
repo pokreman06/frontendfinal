@@ -45,11 +45,25 @@ class FacebookAPI:
         return self.get_insights(post_id, metric_str, period)
 
     def post_image_to_facebook(self, image_url: str, caption: str) -> dict[str, Any]:
-        params = {
-            "url": image_url,
-            "caption": caption
-        }
-        return self._request("POST", f"{PAGE_ID}/photos", params)
+        # Download the image first since Facebook can't access internal Docker URLs
+        try:
+            image_response = requests.get(image_url, timeout=10)
+            image_response.raise_for_status()
+            
+            # Upload image as binary data with multipart/form-data
+            url = f"{GRAPH_API_BASE_URL}/{PAGE_ID}/photos"
+            files = {
+                'source': ('image.jpg', image_response.content, 'image/jpeg')
+            }
+            data = {
+                'caption': caption,
+                'access_token': PAGE_ACCESS_TOKEN
+            }
+            
+            response = requests.post(url, files=files, data=data)
+            return response.json()
+        except requests.RequestException as e:
+            return {"error": f"Failed to download or upload image: {str(e)}"}
     
     def send_dm_to_user(self, user_id: str, message: str) -> dict[str, Any]:
         payload = {

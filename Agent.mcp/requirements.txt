@@ -1,3 +1,5 @@
 mcp
 python-dotenv
 requests
+fastapi
+uvicorn[standard]

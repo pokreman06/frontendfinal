@@ -1,12 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "YvlO6wGazek=",
+  "dgSpecHash": "AC02KmZCIe8=",
   "success": true,
   "projectFilePath": "C:\\Users\\pokre\\frontendfinal\\AgentApi\\AgentApi.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\pokre\\.nuget\\packages\\google.apis\\1.68.0\\google.apis.1.68.0.nupkg.sha512",
     "C:\\Users\\pokre\\.nuget\\packages\\google.apis.core\\1.68.0\\google.apis.core.1.68.0.nupkg.sha512",
     "C:\\Users\\pokre\\.nuget\\packages\\google.apis.customsearchapi.v1\\1.68.0.3520\\google.apis.customsearchapi.v1.1.68.0.3520.nupkg.sha512",
+    "C:\\Users\\pokre\\.nuget\\packages\\htmlagilitypack\\1.12.4\\htmlagilitypack.1.12.4.nupkg.sha512",
     "C:\\Users\\pokre\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\9.0.0\\microsoft.aspnetcore.authentication.jwtbearer.9.0.0.nupkg.sha512",
     "C:\\Users\\pokre\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.8\\microsoft.aspnetcore.openapi.9.0.8.nupkg.sha512",
     "C:\\Users\\pokre\\.nuget\\packages\\microsoft.entityframeworkcore\\9.0.1\\microsoft.entityframeworkcore.9.0.1.nupkg.sha512",

@@ -1,6 +1,61 @@
 import { useState, useEffect } from 'react';
 import { useImagePreferences } from '../contexts/image_preferences_context';
 import { apiClient } from '../query/apiClient';
+import toast from 'react-hot-toast';
+
+// Helper to get the auth token from sessionStorage
+function getAuthToken(): string | null {
+  try {
+    // Try different client IDs that might be in use
+    const clientIds = ['nagent', 'nathan_react'];
+    for (const clientId of clientIds) {
+      const authData = sessionStorage.getItem(`oidc.user:https://auth-dev.snowse.io/realms/DevRealm:${clientId}`);
+      if (authData) {
+        const user = JSON.parse(authData);
+        if (user.access_token) {
+          return user.access_token;
+        }
+      }
+    }
+  } catch (e) {
+    console.debug("Failed to retrieve auth token from sessionStorage", e);
+  }
+  return null;
+}
+
+// Helper to resolve API base URL
+function resolveApiUrl(): string {
+  const raw = import.meta.env.VITE_API_URL as string | undefined;
+  const envUrl = raw?.replace(/\/$/, "");
+  if (envUrl) {
+    if (/^https?:\/\//i.test(envUrl)) return envUrl;
+    if (
+      envUrl.startsWith("localhost") ||
+      envUrl.startsWith("127.") ||
+      envUrl.startsWith("0.") ||
+      /:\d+$/.test(envUrl)
+    ) {
+      return `http://${envUrl}`;
+    }
+    return `https://${envUrl}`;
+  }
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") {
+      return "http://localhost:8000";
+    }
+  }
+  return "https://api.nagent.duckdns.org";
+}
+
+interface SavedImage {
+  url: string;
+  id: number;
+  fileName: string;
+  originalName: string;
+  size: number;
+  uploadedAt: string;
+}
 
 function ImagePreferencesPage() {
   const {
@@ -23,6 +78,7 @@ function ImagePreferencesPage() {
     if (newTheme.trim()) {
       addTheme(newTheme);
       setNewTheme("");
+      setManuallyEdited(false);
     }
   };
 
@@ -30,12 +86,14 @@ function ImagePreferencesPage() {
     if (newMood.trim()) {
       addMood(newMood);
       setNewMood("");
+      setManuallyEdited(false);
     }
   };
 
   const activeThemes = getActiveThemes();
   const activeMoods = getActiveMoods();
   const [searchQuery, setSearchQuery] = useState("");
+  const [manuallyEdited, setManuallyEdited] = useState(false);
   const [images, setImages] = useState<any[]>([]);
   const [loadingImages, setLoadingImages] = useState(false);
   const [selected, setSelected] = useState<Record<string, boolean>>(() => {
@@ -44,16 +102,89 @@ function ImagePreferencesPage() {
       return raw ? JSON.parse(raw) : {};
     } catch { return {}; }
   });
+  
+  // Saved images management
+  const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const loadSavedImages = async () => {
+    try {
+      const data = await apiClient<{ images: SavedImage[] }>('/images/saved', { suppressToast: true });
+      setSavedImages(data.images || []);
+    } catch (error) {
+      console.error('Failed to load saved images:', error);
+      setSavedImages([]);
+    }
+  };
 
   useEffect(() => {
-    // default search query built from first active theme and mood
-    if (!searchQuery) {
-      const t = activeThemes[0]?.name;
-      const m = activeMoods[0]?.name;
-      if (t || m) setSearchQuery([m, t].filter(Boolean).join(' '));
-    }
+    loadSavedImages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const apiUrl = resolveApiUrl();
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(
+        `${apiUrl}/api/images/upload`,
+        {
+          method: 'POST',
+          headers,
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Upload failed:', errorText);
+        throw new Error(`Upload failed: ${response.status}`);
+      }
+
+      toast.success('Image uploaded successfully!');
+      await loadSavedImages();
+    } catch (error) {
+      toast.error('Failed to upload image');
+      console.error(error);
+    } finally {
+      setUploadingImage(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleDeleteImage = async (id: number) => {
+    if (!confirm('Delete this image?')) return;
+    
+    try {
+      await apiClient(`/images/saved/${id}`, { method: 'DELETE' });
+      toast.success('Image deleted');
+      await loadSavedImages();
+    } catch (error) {
+      toast.error('Failed to delete image');
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    // Update search query whenever active themes or moods change, but only if user hasn't manually edited it
+    if (!manuallyEdited) {
+      const t = activeThemes[0]?.name;
+      const m = activeMoods[0]?.name;
+      setSearchQuery([m, t].filter(Boolean).join(' '));
+    }
+  }, [activeThemes, activeMoods, manuallyEdited]);
 
   const previewText = activeThemes.length > 0 && activeMoods.length > 0
     ? `A ${activeMoods[Math.floor(Math.random() * activeMoods.length)]?.name.toLowerCase()} ${activeThemes[Math.floor(Math.random() * activeThemes.length)]?.name.toLowerCase()} style image`
@@ -142,7 +273,10 @@ function ImagePreferencesPage() {
               >
                 <div className="flex items-center space-x-3">
                   <button
-                    onClick={() => toggleTheme(theme.id)}
+                    onClick={() => {
+                      toggleTheme(theme.id);
+                      setManuallyEdited(false);
+                    }}
                     className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
                       theme.active
                         ? 'bg-indigo-600 border-indigo-600'
@@ -215,7 +349,10 @@ function ImagePreferencesPage() {
               >
                 <div className="flex items-center space-x-3">
                   <button
-                    onClick={() => toggleMood(mood.id)}
+                    onClick={() => {
+                      toggleMood(mood.id);
+                      setManuallyEdited(false);
+                    }}
                     className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
                       mood.active
                         ? 'bg-purple-600 border-purple-600'
@@ -261,18 +398,77 @@ function ImagePreferencesPage() {
         </div>
       </div>
 
+      {/* Saved Images Management */}
+      <div className="mt-8 bg-white rounded-xl p-6 border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900">Your Saved Images</h2>
+          <label className="cursor-pointer bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition-all flex items-center space-x-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <span>{uploadingImage ? 'Uploading...' : 'Upload Image'}</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              disabled={uploadingImage}
+              className="hidden"
+            />
+          </label>
+        </div>
+
+        {savedImages.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p>No images uploaded yet. Upload your first image to use in posts!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {savedImages.map((img) => (
+              <div key={img.fileName} className="relative group">
+                <img
+                  src={img.url}
+                  alt={img.fileName}
+                  className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 group-hover:border-indigo-400 transition-all"
+                />
+                <button
+                  onClick={() => handleDeleteImage(img.id)}
+                  className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                  title="Delete image"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+                <div className="mt-2 text-xs text-gray-500 truncate" title={img.originalName}>
+                  {img.originalName}
+                </div>
+                <div className="text-xs text-gray-400">
+                  {(img.size / 1024).toFixed(0)} KB
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Image Search */}
       <div className="mt-8 bg-white rounded-xl p-6 border border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">Search Images</h2>
-          <div className="text-sm text-gray-500">Powered by Pixabay</div>
+          <h2 className="text-lg font-bold">Search Images (Pixabay)</h2>
+          <div className="text-sm text-gray-500">For reference/inspiration</div>
         </div>
 
         <div className="flex space-x-2 mb-4">
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setManuallyEdited(true);
+            }}
             placeholder="Search images (e.g. 'vibrant cyberpunk')"
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
           />
@@ -296,14 +492,79 @@ function ImagePreferencesPage() {
             Search
           </button>
           <button
-            onClick={() => {
-              const toSave = Object.keys(selected).filter(k => selected[k]);
-              localStorage.setItem('selected_images', JSON.stringify(selected));
-              alert(`Saved ${toSave.length} selected images to localStorage`);
+            onClick={async () => {
+              const selectedIds = Object.keys(selected).filter(k => selected[k]);
+              if (selectedIds.length === 0) {
+                toast.error('No images selected');
+                return;
+              }
+              
+              try {
+                setUploadingImage(true);
+                const apiUrl = resolveApiUrl();
+                const token = getAuthToken();
+                
+                let successCount = 0;
+                let failCount = 0;
+                
+                for (const imgId of selectedIds) {
+                  const img = images.find(i => i.id.toString() === imgId);
+                  if (!img) continue;
+                  
+                  try {
+                    // Download image from Pixabay
+                    const imageResponse = await fetch(img.webformatURL);
+                    const blob = await imageResponse.blob();
+                    
+                    // Upload to backend
+                    const formData = new FormData();
+                    formData.append('file', blob, `pixabay_${img.id}.jpg`);
+                    
+                    const headers: Record<string, string> = {};
+                    if (token) {
+                      headers['Authorization'] = `Bearer ${token}`;
+                    }
+                    
+                    const uploadResponse = await fetch(`${apiUrl}/api/images/upload`, {
+                      method: 'POST',
+                      headers,
+                      body: formData,
+                    });
+                    
+                    if (uploadResponse.ok) {
+                      successCount++;
+                    } else {
+                      failCount++;
+                    }
+                  } catch (err) {
+                    console.error(`Failed to upload image ${imgId}:`, err);
+                    failCount++;
+                  }
+                }
+                
+                if (successCount > 0) {
+                  toast.success(`Uploaded ${successCount} image(s) successfully`);
+                  await loadSavedImages();
+                  setSelected({});
+                }
+                if (failCount > 0) {
+                  toast.error(`Failed to upload ${failCount} image(s)`);
+                }
+              } catch (error) {
+                toast.error('Failed to upload images');
+                console.error(error);
+              } finally {
+                setUploadingImage(false);
+              }
             }}
-            className="px-4 py-2 bg-gray-100 rounded-lg"
+            disabled={uploadingImage || Object.keys(selected).filter(k => selected[k]).length === 0}
+            className={`px-4 py-2 rounded-lg ${
+              uploadingImage || Object.keys(selected).filter(k => selected[k]).length === 0
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-green-600 text-white hover:bg-green-700'
+            }`}
           >
-            Save Selected
+            {uploadingImage ? 'Uploading...' : 'Upload Selected'}
           </button>
         </div>
 
