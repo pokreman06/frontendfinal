@@ -5,7 +5,7 @@
 
 # dotenv files
 .env
-
+/actions-runner/
 # User-specific files
 *.rsuser
 *.suo
@@ -482,3 +482,4 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+actions-runner/externals/node24/include/node/openssl/archs/VC-WIN64A/no-asm/include/openssl/ssl.h

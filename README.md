@@ -199,4 +199,15 @@ Rubric Items:
 - 
 
 
-
+ ### Still to do
+ 1. fix the kubernetes auth issues 
+ 2. work on styling
+ 3. get actual analytics
+ 4. remove nonfunctional sections
+ 5. remove "secured with keycloak
+ 6. explanatory text for themes and image
+ 7. update the search bar based on selections
+ 8. update preference bar inline
+ 9. Get facebook working
+ 
+ 
