@@ -35,7 +35,7 @@ builder.Services.AddCors(options =>
 // Configure JWT authentication with Keycloak
 var keycloakAuthority = Environment.GetEnvironmentVariable("KEYCLOAK_AUTHORITY") 
                         ?? "https://auth-dev.snowse.io/realms/DevRealm";
-var keycloakAudience = Environment.GetEnvironmentVariable("KEYCLOAK_AUDIENCE") ?? "nagent";
+var keycloakAudience = Environment.GetEnvironmentVariable("KEYCLOAK_AUDIENCE") ?? "nagent-api";
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

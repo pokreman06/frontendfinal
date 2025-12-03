@@ -13,6 +13,7 @@ const oidcConfig = {
   post_logout_redirect_uri: import.meta.env.VITE_OIDC_POST_LOGOUT_REDIRECT_URI || "http://client.nagent.duckdns.org/",
   response_type: import.meta.env.VITE_OIDC_RESPONSE_TYPE || "code",
   scope: import.meta.env.VITE_OIDC_SCOPE || "openid profile email",
+  audience: import.meta.env.VITE_OIDC_AUDIENCE || "nagent-api",
   onSigninCallback: () => {
     window.history.replaceState({}, document.title, window.location.pathname);
   },
