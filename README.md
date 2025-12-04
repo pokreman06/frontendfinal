@@ -190,6 +190,9 @@ Features:
 - create login page
 - hook login page up to backend
 
+### 
+I added authorized pages I have the login hooked up to the backend but I don't know there is some problem in the kubernetes I still need to fix that. I got the app hooked up with facebook and the ai and the agentic loop pretty well figured out. there are still some things that I need to do for the rubric completion but I am a good chunk of the way done.
+
 ### Dec 6
 
 Rubric Items:
@@ -209,5 +212,5 @@ Rubric Items:
  7. update the search bar based on selections
  8. update preference bar inline
  9. Get facebook working
- 
+
  
