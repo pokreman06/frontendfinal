@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: mcp-deployment
-          image: nhowell02/agentmcp:${TAG}
+          image: nhowell02/nagent_mcp:${TAG}
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
