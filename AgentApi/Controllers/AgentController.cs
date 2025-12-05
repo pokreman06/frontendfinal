@@ -62,6 +62,14 @@ namespace AgentApi.Controllers
                 allTools.AddRange(localTools);
                 allTools.AddRange(mcpTools);
                 
+                // Filter tools if AllowedTools is specified
+                if (request.AllowedTools != null && request.AllowedTools.Count > 0)
+                {
+                    allTools = allTools.Where(t => request.AllowedTools.Contains(t.Function.Name)).ToList();
+                    _logger.LogInformation("Filtered to {Count} allowed tools: {Tools}", 
+                        allTools.Count, string.Join(", ", allTools.Select(t => t.Function.Name)));
+                }
+                
                 _logger.LogInformation("Available tools: {LocalCount} local + {McpCount} MCP = {Total} total", 
                     localTools.Count, mcpTools.Count, allTools.Count);
 
@@ -107,8 +115,16 @@ Always use this exact format when you need to perform an action."
                     if (toolCalls.Count > 0)
                     {
                         var toolResults = new List<string>();
+                        var directFunctionExecutions = new List<FunctionExecutionResult>();
+                        
                         foreach (var (toolName, args) in toolCalls)
                         {
+                            var execution = new FunctionExecutionResult
+                            {
+                                FunctionName = toolName,
+                                Parameters = args
+                            };
+                            
                             try
                             {
                                 string result;
@@ -152,14 +168,21 @@ Always use this exact format when you need to perform an action."
                                     result = await _mcpClient.ExecuteToolAsync(toolName, args);
                                 }
                                 
+                                execution.Success = true;
+                                execution.Result = result;
                                 toolResults.Add($"Successfully executed {toolName}: {result}");
                                 _logger.LogInformation("Direct tool {Tool} executed successfully", toolName);
                             }
                             catch (Exception ex)
                             {
+                                execution.Success = false;
+                                execution.ErrorMessage = ex.Message;
+                                execution.Result = $"{{\"error\": \"{ex.Message}\"}}";
                                 _logger.LogError(ex, "Error executing direct tool {Tool}", toolName);
                                 toolResults.Add($"Error executing {toolName}: {ex.Message}");
                             }
+                            
+                            directFunctionExecutions.Add(execution);
                         }
                         
                         return Ok(new AgentResponse
@@ -167,7 +190,8 @@ Always use this exact format when you need to perform an action."
                             Response = string.Join("\n", toolResults),
                             ConversationHistory = messages,
                             UsedMcp = true,
-                            ToolsUsed = toolCalls.Select(t => t.toolName).ToList()
+                            ToolsUsed = toolCalls.Select(t => t.toolName).ToList(),
+                            FunctionExecutions = directFunctionExecutions
                         });
                     }
                 }
@@ -180,6 +204,7 @@ Always use this exact format when you need to perform an action."
 
                 var usedMcp = false;
                 var toolsUsed = new List<string>();
+                var functionExecutions = new List<FunctionExecutionResult>();
                 var maxIterations = 10; // Prevent infinite loops
                 var iteration = 0;
 
@@ -263,6 +288,12 @@ Always use this exact format when you need to perform an action."
                             {
                                 toolsUsed.Add(toolName);
                                 
+                                var execution = new FunctionExecutionResult
+                                {
+                                    FunctionName = toolName,
+                                    Parameters = args
+                                };
+                                
                                 try
                                 {
                                     string result;
@@ -307,14 +338,22 @@ Always use this exact format when you need to perform an action."
                                         result = await _mcpClient.ExecuteToolAsync(toolName, args);
                                     }
                                     
+                                    execution.Success = true;
+                                    execution.Result = result;
+                                    
                                     // Replace the assistant message content with tool result
                                     assistantMessage.Content = $"Tool {toolName} executed. Result: {result}";
                                 }
                                 catch (Exception ex)
                                 {
+                                    execution.Success = false;
+                                    execution.ErrorMessage = ex.Message;
+                                    execution.Result = $"{{\"error\": \"{ex.Message}\"}}";
                                     _logger.LogError(ex, "Error executing tool {ToolName}", toolName);
                                     assistantMessage.Content = $"Error executing tool {toolName}: {ex.Message}";
                                 }
+                                
+                                functionExecutions.Add(execution);
                             }
                         }
                         
@@ -461,7 +500,8 @@ Always use this exact format when you need to perform an action."
                                 Response = $"{assistantMessage.Content}\n\n{toolResultText}",
                                 ConversationHistory = messages,
                                 UsedMcp = usedMcp,
-                                ToolsUsed = toolsUsed.Distinct().ToList()
+                                ToolsUsed = toolsUsed.Distinct().ToList(),
+                                FunctionExecutions = functionExecutions
                             });
                         }
                     }
@@ -474,7 +514,8 @@ Always use this exact format when you need to perform an action."
                         Response = finalResponse,
                         ConversationHistory = messages,
                         UsedMcp = usedMcp,
-                        ToolsUsed = toolsUsed.Distinct().ToList()
+                        ToolsUsed = toolsUsed.Distinct().ToList(),
+                        FunctionExecutions = functionExecutions
                     });
                 }
 

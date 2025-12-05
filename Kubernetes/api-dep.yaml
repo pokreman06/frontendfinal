@@ -53,7 +53,4 @@ spec:
                   name: nate-agent-secrets
                   key: KEYCLOAK_AUDIENCE
             - name: MCP_SERVICE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: nate-agent-secrets
-                  key: MCP_SERVICE_URL
+              value: "http://mcp-service:8000"

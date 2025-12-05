@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { usePost } from "../context/PostContext";
+import ToolUsageDisplay from "../components/ToolUsageDisplay";
 
 // Helper to get the auth token from sessionStorage
 function getAuthToken(): string | null {
@@ -44,10 +47,17 @@ function resolveApiUrl(): string {
   return "https://api.nagent.duckdns.org";
 }
 
+interface ToolCall {
+  name: string;
+  arguments?: any;
+  result?: any;
+}
+
 interface Message {
   role: "user" | "assistant" | "system";
   content: string;
   timestamp?: Date;
+  toolCalls?: ToolCall[];
 }
 
 export default function ChatPage() {
@@ -56,6 +66,8 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { setPostData } = usePost();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -64,6 +76,16 @@ export default function ChatPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const ready_to_post = (message: string, toolCalls?: ToolCall[], imageUrl?: string, imageDockerUrl?: string) => {
+    setPostData({
+      message,
+      imageUrl,
+      imageDockerUrl,
+      toolCalls,
+    });
+    navigate("/facebook-post");
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,10 +103,21 @@ export default function ChatPage() {
     setError(null);
 
     // Build conversation history in the format the API expects
-    const conversationHistory = messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
+    // Filter to prevent consecutive assistant messages
+    const conversationHistory: Array<{role: string; content: string}> = [];
+    let lastRole: string | null = null;
+    
+    for (const msg of messages) {
+      // Skip consecutive assistant messages (keep only the last one before a user message)
+      if (msg.role === "assistant" && lastRole === "assistant") {
+        conversationHistory.pop(); // Remove previous assistant message
+      }
+      conversationHistory.push({
+        role: msg.role,
+        content: msg.content,
+      });
+      lastRole = msg.role;
+    }
 
     const payload = {
       userMessage: inputText,
@@ -113,13 +146,25 @@ export default function ChatPage() {
       }
 
       const data = await res.json();
+      console.log("API Response:", data);
+      
+      // Map functionExecutions to toolCalls format
+      const toolCalls = (data.functionExecutions || []).map((exec: any) => ({
+        name: exec.functionName,
+        arguments: exec.parameters,
+        result: exec.result
+      }));
+      
+      console.log("Mapped Tool Calls:", toolCalls);
       
       const assistantMessage: Message = {
         role: "assistant",
         content: data.response || data.message || "No response received",
         timestamp: new Date(),
+        toolCalls: toolCalls,
       };
 
+      console.log("Assistant Message:", assistantMessage);
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send message");
@@ -218,25 +263,58 @@ export default function ChatPage() {
                 }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                  className={`max-w-[80%] ${
                     msg.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white border border-gray-200 text-gray-800"
+                      ? ""
+                      : ""
                   }`}
                 >
-                  <div className="whitespace-pre-wrap break-words">
-                    {msg.content}
-                  </div>
-                  {msg.timestamp && (
-                    <div
-                      className={`text-xs mt-2 ${
-                        msg.role === "user"
-                          ? "text-blue-100"
-                          : "text-gray-500"
-                      }`}
-                    >
-                      {msg.timestamp.toLocaleTimeString()}
+                  <div
+                    className={`rounded-lg px-4 py-3 ${
+                      msg.role === "user"
+                        ? "bg-blue-600 text-white"
+                        : "bg-white border border-gray-200 text-gray-800"
+                    }`}
+                  >
+                    <div className="whitespace-pre-wrap break-words">
+                      {msg.content}
                     </div>
+                    {msg.timestamp && (
+                      <div
+                        className={`text-xs mt-2 ${
+                          msg.role === "user"
+                            ? "text-blue-100"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        {msg.timestamp.toLocaleTimeString()}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {msg.role === "assistant" && msg.toolCalls && msg.toolCalls.length > 0 && (
+                    <>
+                      <ToolUsageDisplay toolCalls={msg.toolCalls} />
+                      <button
+                        onClick={() => ready_to_post(msg.content, msg.toolCalls)}
+                        className="mt-2 w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center justify-center space-x-2"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                          />
+                        </svg>
+                        <span>Ready to Post</span>
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

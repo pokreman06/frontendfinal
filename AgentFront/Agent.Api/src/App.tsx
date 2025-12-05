@@ -9,6 +9,8 @@ import ImagePreferencesPage from "./pages/image_preferences_page";
 import QueryThemesPage from "./pages/QueryThemesPage";
 import FacebookPostPage from "./pages/FacebookPostPage";
 import ChatPage from "./pages/ChatPage";
+import { PostProvider } from "./context/PostContext";
+import ToolUsageDisplay from "./components/ToolUsageDisplay";
 
 function App() {
   const auth = useAuth();
@@ -62,21 +64,23 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="query-themes" element={<QueryThemesPage/>} />
-          <Route path="imagepreference" element={<ImagePreferencesPage/>} />
-          <Route path="facebook-post" element={<FacebookPostPage/>} />
-          <Route path="chat" element={<ChatPage/>} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <PostProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="query-themes" element={<QueryThemesPage/>} />
+            <Route path="imagepreference" element={<ImagePreferencesPage/>} />
+            <Route path="facebook-post" element={<FacebookPostPage/>} />
+            <Route path="chat" element={<ChatPage/>} />
+            <Route path="tool-usage-display" element={<PostProvider><ToolUsageDisplay toolCalls={[{name: "gaybacon", arguments:{}, result: "yay" }]} /></PostProvider>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </PostProvider>
   );
 }
 

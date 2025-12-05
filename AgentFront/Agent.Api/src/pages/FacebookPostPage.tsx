@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { loadQueryThemes } from "../query/apiClient";
+import { usePost } from "../context/PostContext";
+import ToolUsageDisplay from "../components/ToolUsageDisplay";
 
 // Helper to get the auth token from sessionStorage
 function getAuthToken(): string | null {
@@ -56,6 +58,12 @@ interface SavedImage {
   uploadedAt: string;
 }
 
+interface ToolCall {
+  name: string;
+  arguments?: any;
+  result?: any;
+}
+
 export default function FacebookPostPage() {
   const [inputText, setInputText] = useState("");
   const [recommendation, setRecommendation] = useState<any>(null);
@@ -66,11 +74,31 @@ export default function FacebookPostPage() {
   const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>("");
   const [selectedImageDockerUrl, setSelectedImageDockerUrl] = useState<string>("");
+  const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
+  const { postData, setPostData } = usePost();
 
   useEffect(() => {
     loadQueryThemes().then(setQueryThemes).catch(console.error);
     loadSavedImages();
   }, []);
+
+  // Load data from context if available
+  useEffect(() => {
+    if (postData) {
+      setInputText(postData.message);
+      if (postData.imageUrl) {
+        setSelectedImageUrl(postData.imageUrl);
+      }
+      if (postData.imageDockerUrl) {
+        setSelectedImageDockerUrl(postData.imageDockerUrl);
+      }
+      if (postData.toolCalls) {
+        setToolCalls(postData.toolCalls);
+      }
+      // Clear the context data after loading
+      setPostData(null);
+    }
+  }, [postData, setPostData]);
 
   const loadSavedImages = async () => {
     try {
@@ -133,6 +161,16 @@ export default function FacebookPostPage() {
 
       const data = await res.json();
       setRecommendation(data);
+      
+      // Map functionExecutions to toolCalls format
+      if (data.functionExecutions && data.functionExecutions.length > 0) {
+        const mappedToolCalls = data.functionExecutions.map((exec: any) => ({
+          name: exec.functionName,
+          arguments: exec.parameters,
+          result: exec.result
+        }));
+        setToolCalls(mappedToolCalls);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to get recommendation");
     } finally {
@@ -141,6 +179,15 @@ export default function FacebookPostPage() {
   };
 
   const handlePostToFacebook = async (messageToPost: string) => {
+    // Show confirmation dialog
+    const confirmMessage = selectedImageDockerUrl
+      ? `Are you sure you want to post this message with an image to Facebook?\n\n"${messageToPost}"`
+      : `Are you sure you want to post this message to Facebook?\n\n"${messageToPost}"`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return; // User cancelled
+    }
+
     setPosting(true);
     setError(null);
 
@@ -180,6 +227,16 @@ EXPLANATION: Posting an image with caption to Facebook.`
 
       const data = await res.json();
       setRecommendation({ ...recommendation, posted: true, postResult: data });
+      
+      // Map functionExecutions to toolCalls format and append
+      if (data.functionExecutions && data.functionExecutions.length > 0) {
+        const mappedToolCalls = data.functionExecutions.map((exec: any) => ({
+          name: exec.functionName,
+          arguments: exec.parameters,
+          result: exec.result
+        }));
+        setToolCalls([...toolCalls, ...mappedToolCalls]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to post to Facebook");
     } finally {
@@ -295,7 +352,7 @@ EXPLANATION: Posting an image with caption to Facebook.`
                 </div>
               )}
             </div>
-
+            <ToolUsageDisplay />
             <button
               type="submit"
               disabled={loading || !inputText.trim()}
@@ -361,6 +418,7 @@ EXPLANATION: Posting an image with caption to Facebook.`
           {/* Recommendation Display */}
           {recommendation && !recommendation.posted && (
             <div className="mt-6 space-y-4">
+              <ToolUsageDisplay toolCalls={toolCalls} />
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -435,9 +493,11 @@ EXPLANATION: Posting an image with caption to Facebook.`
             </div>
           )}
 
+
           {/* Post Success Display */}
           {recommendation?.posted && (
             <div className="mt-6 space-y-4">
+              <ToolUsageDisplay toolCalls={toolCalls} />
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <div className="flex items-start">
                   <svg
