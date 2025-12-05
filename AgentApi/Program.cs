@@ -57,6 +57,7 @@ builder.Services
 string connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
                           ?? builder.Configuration.GetConnectionString("DefaultConnection")!;
 
+builder.Services.AddHttpClient(); // Add HttpClientFactory for AuthController
 builder.Services.AddSingleton(new PromptSearcher(Environment.GetEnvironmentVariable("GOOGLE_API"), Environment.GetEnvironmentVariable("CUSTOM_SEARCH_ENGINE")));
 builder.Services.AddScoped<WebPageFetcher>();
 builder.Services.AddDbContext<MyDbContext>(options =>

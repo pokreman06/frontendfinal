@@ -45,6 +45,11 @@ namespace AgentApi.Controllers
                     formData["refresh_token"] = request.RefreshToken;
                 }
 
+                if (!string.IsNullOrEmpty(request.CodeVerifier))
+                {
+                    formData["code_verifier"] = request.CodeVerifier;
+                }
+
                 var content = new FormUrlEncodedContent(formData);
                 var response = await httpClient.PostAsync(tokenEndpoint, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
@@ -72,5 +77,6 @@ namespace AgentApi.Controllers
         public string Code { get; set; } = "";
         public string RedirectUri { get; set; } = "";
         public string? RefreshToken { get; set; }
+        public string? CodeVerifier { get; set; }
     }
 }

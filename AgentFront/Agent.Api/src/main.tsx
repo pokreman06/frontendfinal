@@ -6,21 +6,27 @@ import { AuthProvider } from 'react-oidc-context';
 import App from './App.tsx'
 import { ImagePreferencesProvider } from './contexts/image_preferences_context.tsx';
 // Load OIDC config from environment variables with defaults
+const keycloakAuthority = import.meta.env.VITE_OIDC_AUTHORITY || "https://auth-dev.snowse.io/realms/DevRealm";
+const apiUrl = import.meta.env.VITE_API_URL || "https://api.nagent.duckdns.org";
+
 const oidcConfig = {
-  authority: import.meta.env.VITE_OIDC_AUTHORITY || "https://auth-dev.snowse.io/realms/DevRealm",
+  authority: keycloakAuthority,
   client_id: import.meta.env.VITE_OIDC_CLIENT_ID || "nagent",
-  redirect_uri: import.meta.env.VITE_OIDC_REDIRECT_URI || "https://client.nagent.duckdns.org/",
-  post_logout_redirect_uri: import.meta.env.VITE_OIDC_POST_LOGOUT_REDIRECT_URI || "http://client.nagent.duckdns.org/",
-  response_type: import.meta.env.VITE_OIDC_RESPONSE_TYPE || "id_token token",
+  redirect_uri: import.meta.env.VITE_OIDC_REDIRECT_URI || window.location.origin + "/",
+  post_logout_redirect_uri: import.meta.env.VITE_OIDC_POST_LOGOUT_REDIRECT_URI || window.location.origin + "/",
+  response_type: "code",
   scope: import.meta.env.VITE_OIDC_SCOPE || "openid profile email",
-  // Only include audience if explicitly set (for production)
-  ...(import.meta.env.VITE_OIDC_AUDIENCE && { audience: import.meta.env.VITE_OIDC_AUDIENCE }),
+  // Use backend as token endpoint to avoid CORS issues
+  metadata: {
+    authorization_endpoint: `${keycloakAuthority}/protocol/openid-connect/auth`,
+    token_endpoint: `${apiUrl}/api/auth/token`,
+    end_session_endpoint: `${keycloakAuthority}/protocol/openid-connect/logout`,
+    userinfo_endpoint: `${keycloakAuthority}/protocol/openid-connect/userinfo`,
+    issuer: keycloakAuthority,
+  },
   onSigninCallback: () => {
     window.history.replaceState({}, document.title, window.location.pathname);
   },
-  // Additional settings to help with CORS
-  loadUserInfo: true,
-  automaticSilentRenew: false,
 };
 
 createRoot(document.getElementById('root')!).render(
