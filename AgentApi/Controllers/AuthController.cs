@@ -21,7 +21,8 @@ namespace AgentApi.Controllers
         }
 
         [HttpPost("token")]
-        public async Task<IActionResult> ExchangeToken([FromBody] TokenRequest request)
+        [Consumes("application/x-www-form-urlencoded", "application/json")]
+        public async Task<IActionResult> ExchangeToken([FromForm] TokenRequest request)
         {
             try
             {
