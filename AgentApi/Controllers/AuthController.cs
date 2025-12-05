@@ -22,49 +22,63 @@ namespace AgentApi.Controllers
 
         [HttpPost("token")]
         [Consumes("application/x-www-form-urlencoded", "application/json")]
-        public async Task<IActionResult> ExchangeToken([FromForm] TokenRequest request)
+        public async Task<IActionResult> ExchangeToken()
         {
             try
             {
-                _logger.LogInformation($"Token exchange request - ClientId: {request.ClientId}, GrantType: {request.GrantType}, HasCode: {!string.IsNullOrEmpty(request.Code)}, HasCodeVerifier: {!string.IsNullOrEmpty(request.CodeVerifier)}");
+                // Read form data manually since [FromForm] doesn't work reliably with OIDC clients
+                var form = await Request.ReadFormAsync();
+                
+                var grantType = form["grant_type"].ToString();
+                var clientId = form["client_id"].ToString();
+                var code = form["code"].ToString();
+                var redirectUri = form["redirect_uri"].ToString();
+                var refreshToken = form["refresh_token"].ToString();
+                var codeVerifier = form["code_verifier"].ToString();
+                
+                _logger.LogInformation($"Token exchange request - ClientId: {clientId}, GrantType: {grantType}, HasCode: {!string.IsNullOrEmpty(code)}, HasCodeVerifier: {!string.IsNullOrEmpty(codeVerifier)}");
                 
                 var httpClient = _httpClientFactory.CreateClient();
                 var tokenEndpoint = $"{_keycloakAuthority}/protocol/openid-connect/token";
 
                 var formData = new Dictionary<string, string>
                 {
-                    { "grant_type", request.GrantType },
-                    { "client_id", request.ClientId },
-                    { "redirect_uri", request.RedirectUri }
+                    { "grant_type", grantType },
+                    { "client_id", clientId },
+                    { "redirect_uri", redirectUri }
                 };
 
-                if (!string.IsNullOrEmpty(request.Code))
+                if (!string.IsNullOrEmpty(code))
                 {
-                    formData["code"] = request.Code;
+                    formData["code"] = code;
                 }
 
-                if (!string.IsNullOrEmpty(request.RefreshToken))
+                if (!string.IsNullOrEmpty(refreshToken))
                 {
-                    formData["refresh_token"] = request.RefreshToken;
+                    formData["refresh_token"] = refreshToken;
                 }
 
-                if (!string.IsNullOrEmpty(request.CodeVerifier))
+                if (!string.IsNullOrEmpty(codeVerifier))
                 {
-                    formData["code_verifier"] = request.CodeVerifier;
+                    formData["code_verifier"] = codeVerifier;
                 }
                 
                 _logger.LogInformation($"Sending token request to Keycloak with {formData.Count} parameters");
 
                 var content = new FormUrlEncodedContent(formData);
+                
+                _logger.LogInformation($"Calling Keycloak token endpoint: {tokenEndpoint}");
                 var response = await httpClient.PostAsync(tokenEndpoint, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
                 {
+                    _logger.LogInformation("Token exchange successful");
                     return Content(responseContent, "application/json");
                 }
 
-                _logger.LogError($"Token exchange failed: {responseContent}");
+                _logger.LogError($"Token exchange failed with status {response.StatusCode}: {responseContent}");
+                _logger.LogError($"Request details - ClientId: {formData.GetValueOrDefault("client_id")}, RedirectUri: {formData.GetValueOrDefault("redirect_uri")}");
                 return StatusCode((int)response.StatusCode, responseContent);
             }
             catch (Exception ex)

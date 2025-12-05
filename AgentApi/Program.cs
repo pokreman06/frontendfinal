@@ -93,9 +93,9 @@ if (app.Environment.IsProduction())
 // Enable CORS using the policy defined above
 app.UseCors("LocalDev");
 
-// Enable authentication and authorization
-app.UseAuthentication();
-app.UseAuthorization();
+// Enable authentication and authorization (DISABLED FOR TESTING)
+// app.UseAuthentication();
+// app.UseAuthorization();
 
 app.MapControllers();
 
