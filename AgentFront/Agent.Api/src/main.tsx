@@ -11,13 +11,16 @@ const oidcConfig = {
   client_id: import.meta.env.VITE_OIDC_CLIENT_ID || "nagent",
   redirect_uri: import.meta.env.VITE_OIDC_REDIRECT_URI || "https://client.nagent.duckdns.org/",
   post_logout_redirect_uri: import.meta.env.VITE_OIDC_POST_LOGOUT_REDIRECT_URI || "http://client.nagent.duckdns.org/",
-  response_type: import.meta.env.VITE_OIDC_RESPONSE_TYPE || "code",
+  response_type: import.meta.env.VITE_OIDC_RESPONSE_TYPE || "id_token token",
   scope: import.meta.env.VITE_OIDC_SCOPE || "openid profile email",
   // Only include audience if explicitly set (for production)
   ...(import.meta.env.VITE_OIDC_AUDIENCE && { audience: import.meta.env.VITE_OIDC_AUDIENCE }),
   onSigninCallback: () => {
     window.history.replaceState({}, document.title, window.location.pathname);
   },
+  // Additional settings to help with CORS
+  loadUserInfo: true,
+  automaticSilentRenew: false,
 };
 
 createRoot(document.getElementById('root')!).render(
