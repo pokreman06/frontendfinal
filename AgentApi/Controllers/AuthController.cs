@@ -26,6 +26,8 @@ namespace AgentApi.Controllers
         {
             try
             {
+                _logger.LogInformation($"Token exchange request - ClientId: {request.ClientId}, GrantType: {request.GrantType}, HasCode: {!string.IsNullOrEmpty(request.Code)}, HasCodeVerifier: {!string.IsNullOrEmpty(request.CodeVerifier)}");
+                
                 var httpClient = _httpClientFactory.CreateClient();
                 var tokenEndpoint = $"{_keycloakAuthority}/protocol/openid-connect/token";
 
@@ -50,6 +52,8 @@ namespace AgentApi.Controllers
                 {
                     formData["code_verifier"] = request.CodeVerifier;
                 }
+                
+                _logger.LogInformation($"Sending token request to Keycloak with {formData.Count} parameters");
 
                 var content = new FormUrlEncodedContent(formData);
                 var response = await httpClient.PostAsync(tokenEndpoint, content);
