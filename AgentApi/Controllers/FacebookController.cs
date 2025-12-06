@@ -18,7 +18,7 @@ namespace AgentApi.Controllers
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
-            _mcpServiceUrl = Environment.GetEnvironmentVariable("MCP_SERVICE_URL") ?? "http://facebook-mcp-service:8000";
+            _mcpServiceUrl = Environment.GetEnvironmentVariable("MCP_SERVICE_URL") ?? "http://mcp-service:8000";
         }
 
         [HttpGet("stats")]
