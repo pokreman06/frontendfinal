@@ -19,7 +19,8 @@ namespace AgentApi.Services
         {
             _logger = logger;
             _httpClient = httpClient;
-            _baseUrl = baseUrl ?? "http://facebook-mcp-service:8000";
+            // prefer provided baseUrl, otherwise use in-cluster service name
+            _baseUrl = baseUrl ?? Environment.GetEnvironmentVariable("MCP_SERVICE_URL") ?? "http://mcp-service:8000";
             _logger.LogInformation("MCP client initialized to connect to {BaseUrl}", _baseUrl);
         }
 

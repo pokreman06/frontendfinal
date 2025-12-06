@@ -72,9 +72,12 @@ builder.Services.AddHttpClient<ILocalAIService, LocalAIService>(client =>
 // Register MCP Client with factory pattern
 builder.Services.AddHttpClient<McpClient>(client =>
 {
-    var mcpServiceUrl = Environment.GetEnvironmentVariable("MCP_SERVICE_URL") ?? "http://facebook-mcp-service:8000";
+    // prefer env var; fallback to in-cluster service name (same namespace)
+    var mcpServiceUrl = Environment.GetEnvironmentVariable("MCP_SERVICE_URL") ?? "http://mcp-service:8000";
     client.BaseAddress = new Uri(mcpServiceUrl);
     client.Timeout = TimeSpan.FromMinutes(2);
+    // Small runtime info so pod logs show what the resolved MCP URL is
+    Console.WriteLine($"MCP service URL resolved to: {mcpServiceUrl}");
 });
 builder.Services.AddScoped<IMcpClient>(provider => provider.GetRequiredService<McpClient>());
 var app = builder.Build();
