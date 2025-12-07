@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePost } from "../context/PostContext";
+import { usePost } from "../context/usePost";
 import ToolUsageDisplay from "../components/ToolUsageDisplay";
 
 // Helper to get the auth token from sessionStorage
@@ -49,8 +49,8 @@ function resolveApiUrl(): string {
 
 interface ToolCall {
   name: string;
-  arguments?: any;
-  result?: any;
+  arguments?: Record<string, unknown>;
+  result?: Record<string, unknown> | string;
 }
 
 interface Message {
@@ -150,7 +150,7 @@ export default function ChatPage() {
       console.log("API Response:", data);
       
       // Map functionExecutions to toolCalls format
-      const toolCalls = (data.functionExecutions || []).map((exec: any) => ({
+      const toolCalls = (data.functionExecutions || []).map((exec: Record<string, unknown>) => ({
         name: exec.functionName,
         arguments: exec.parameters,
         result: exec.result

@@ -87,7 +87,9 @@ export async function apiClient<T>(
       try {
         const data = await res.json();
         message = data.error || data.message || message;
-      } catch {}
+      } catch {
+        // Ignore errors parsing JSON response
+      }
       if (!options.suppressToast) {
         toast.error(message);
       }
@@ -229,8 +231,8 @@ export interface ToolCall {
   id: number;
   toolName: string;
   query: string;
-  arguments?: any;
-  result?: any;
+  arguments?: Record<string, unknown>;
+  result?: Record<string, unknown> | string;
   executedAt: string;
   durationMs?: number;
 }
@@ -260,9 +262,9 @@ export async function loadToolCalls(page: number = 1, pageSize: number = 50, too
   }
 }
 
-export async function loadToolCallStats(): Promise<any[]> {
+export async function loadToolCallStats(): Promise<Record<string, unknown>[]> {
   try {
-    const data = await apiClient<{ stats: any[] }>("/tool-calls/stats", { suppressToast: true });
+    const data = await apiClient<{ stats: Record<string, unknown>[] }>("/tool-calls/stats", { suppressToast: true });
     return data?.stats ?? [];
   } catch (err) {
     console.error("loadToolCallStats: failed", err);

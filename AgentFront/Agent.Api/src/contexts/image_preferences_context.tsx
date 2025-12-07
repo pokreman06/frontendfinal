@@ -1,25 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
-
-interface PreferenceItem {
-  id: number;
-  name: string;
-  active: boolean;
-}
-
-interface ImagePreferencesContextType {
-  themes: PreferenceItem[];
-  moods: PreferenceItem[];
-  addTheme: (name: string) => void;
-  addMood: (name: string) => void;
-  toggleTheme: (id: number) => void;
-  toggleMood: (id: number) => void;
-  removeTheme: (id: number) => void;
-  removeMood: (id: number) => void;
-  getActiveThemes: () => PreferenceItem[];
-  getActiveMoods: () => PreferenceItem[];
-}
-
-const ImagePreferencesContext = createContext<ImagePreferencesContextType | undefined>(undefined);
+import { useState, type ReactNode } from 'react';
+import { ImagePreferencesContext } from './ImagePreferencesContextOnly';
+import type { PreferenceItem } from './image_preferences_types';
 
 export function ImagePreferencesProvider({ children }: { children: ReactNode }) {
   const [themes, setThemes] = useState<PreferenceItem[]>([
@@ -101,12 +82,4 @@ export function ImagePreferencesProvider({ children }: { children: ReactNode }) 
       {children}
     </ImagePreferencesContext.Provider>
   );
-}
-
-export function useImagePreferences() {
-  const context = useContext(ImagePreferencesContext);
-  if (context === undefined) {
-    throw new Error('useImagePreferences must be used within an ImagePreferencesProvider');
-  }
-  return context;
 }

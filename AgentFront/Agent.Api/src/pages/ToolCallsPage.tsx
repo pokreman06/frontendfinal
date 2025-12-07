@@ -1,10 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { loadToolCalls, loadToolCallStats } from "../query/apiClient";
 import type { ToolCall } from "../query/apiClient";
 
+interface ToolStat {
+  toolName: string;
+  count: number;
+  avgDurationMs?: number;
+}
+
 export default function ToolCallsPage() {
   const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
-  const [stats, setStats] = useState<any[]>([]);
+  const [stats, setStats] = useState<ToolStat[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [total, setTotal] = useState(0);
@@ -13,11 +19,7 @@ export default function ToolCallsPage() {
   const [loading, setLoading] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
-  useEffect(() => {
-    loadData();
-  }, [page, pageSize, toolNameFilter]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     const response = await loadToolCalls(page, pageSize, toolNameFilter);
     setToolCalls(response.toolCalls);
@@ -25,9 +27,13 @@ export default function ToolCallsPage() {
     setTotalPages(response.totalPages);
     
     const statsData = await loadToolCallStats();
-    setStats(statsData);
+    setStats(statsData as unknown as ToolStat[]);
     setLoading(false);
-  };
+  }, [page, pageSize, toolNameFilter]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const toggleExpanded = (id: number) => {
     const newExpanded = new Set(expandedIds);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useImagePreferences } from '../contexts/image_preferences_context';
+import { useImagePreferences } from '../contexts/useImagePreferences';
 import { apiClient } from '../query/apiClient';
 import toast from 'react-hot-toast';
 
@@ -57,6 +57,20 @@ interface SavedImage {
   uploadedAt: string;
 }
 
+interface PixabayImage {
+  id: number;
+  webformatURL: string;
+  previewURL: string;
+  userImageURL?: string;
+  user?: string;
+  tags: string;
+  views: number;
+  downloads: number;
+  favorites: number;
+  likes: number;
+  comments: number;
+}
+
 function ImagePreferencesPage() {
   const {
     themes,
@@ -94,7 +108,7 @@ function ImagePreferencesPage() {
   const activeMoods = getActiveMoods();
   const [searchQuery, setSearchQuery] = useState("");
   const [manuallyEdited, setManuallyEdited] = useState(false);
-  const [images, setImages] = useState<any[]>([]);
+  const [images, setImages] = useState<PixabayImage[]>([]);
   const [loadingImages, setLoadingImages] = useState(false);
   const [selected, setSelected] = useState<Record<string, boolean>>(() => {
     try {
@@ -119,7 +133,6 @@ function ImagePreferencesPage() {
 
   useEffect(() => {
     loadSavedImages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -478,7 +491,7 @@ function ImagePreferencesPage() {
               try {
                 setLoadingImages(true);
                 const qs = new URLSearchParams({ q: searchQuery, per_page: '24' }).toString();
-                const data = await apiClient<any>(`/images/search?${qs}`);
+                const data = await apiClient<{ hits: PixabayImage[] }>(`/images/search?${qs}`);
                 // Pixabay returns { hits: [...] }
                 setImages(data?.hits || []);
               } catch (e) {

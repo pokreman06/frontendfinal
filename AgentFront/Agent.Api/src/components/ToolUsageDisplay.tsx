@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
-import { usePost } from "../context/PostContext";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { usePost } from "../context/usePost";
 
 interface ToolCall {
   name: string;
-  arguments?: any;
-  result?: any;
+  arguments?: Record<string, unknown>;
+  result?: Record<string, unknown> | string;
 }
 
 interface ToolUsageDisplayProps {
@@ -17,18 +17,9 @@ export default function ToolUsageDisplay({ toolCalls: propToolCalls, query }: To
   const { postData } = usePost();
 
   // Use prop toolCalls if provided, otherwise use context
-  const toolCalls = propToolCalls || postData?.toolCalls || [];
+  const toolCalls = useMemo(() => propToolCalls || postData?.toolCalls || [], [propToolCalls, postData]);
 
-  // Store tool calls when they change
-  useEffect(() => {
-    if (toolCalls && toolCalls.length > 0) {
-      toolCalls.forEach((tool) => {
-        storeToolCall(tool.name, query || "", tool.arguments || {}, tool.result || "");
-      });
-    }
-  }, [toolCalls, query]);
-
-  const storeToolCall = async (toolName: string, queryText: string, args: any, result: any) => {
+  const storeToolCall = useCallback(async (toolName: string, queryText: string, args: Record<string, unknown>, result: Record<string, unknown> | string) => {
     try {
       // Resolve API base URL
       const apiBase = resolveApiUrl();
@@ -53,7 +44,16 @@ export default function ToolUsageDisplay({ toolCalls: propToolCalls, query }: To
     } catch (err) {
       console.warn("Error storing tool call:", err);
     }
-  };
+  }, []);
+
+  // Store tool calls when they change
+  useEffect(() => {
+    if (toolCalls && toolCalls.length > 0) {
+      toolCalls.forEach((tool) => {
+        storeToolCall(tool.name, query || "", tool.arguments || {}, tool.result || "");
+      });
+    }
+  }, [toolCalls, query, storeToolCall]);
 
   const resolveApiUrl = (): string => {
     const raw = import.meta.env.VITE_API_URL as string | undefined;

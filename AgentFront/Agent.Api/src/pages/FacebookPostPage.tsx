@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { loadQueryThemes, loadSourceMaterials } from "../query/apiClient";
-import { usePost } from "../context/PostContext";
+import type { SourceMaterial } from "../query/apiClient";
+import { usePost } from "../context/usePost";
 import { useAuth } from "react-oidc-context";
 import ToolUsageDisplay from "../components/ToolUsageDisplay";
 import SelectionGrid from "../components/SelectionGrid";
@@ -62,14 +63,25 @@ interface SavedImage {
 
 interface ToolCall {
   name: string;
-  arguments?: any;
-  result?: any;
+  arguments?: Record<string, unknown>;
+  result?: Record<string, unknown> | string;
+}
+
+interface Recommendation {
+  response?: string;
+  posted?: boolean;
+  postResult?: Record<string, unknown> & { response?: string };
+  functionExecutions?: Array<{
+    functionName: string;
+    parameters: Record<string, unknown>;
+    result: Record<string, unknown> | string;
+  }>;
 }
 
 export default function FacebookPostPage() {
   const auth = useAuth();
   const [inputText, setInputText] = useState("");
-  const [recommendation, setRecommendation] = useState<any>(null);
+  const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
@@ -78,8 +90,8 @@ export default function FacebookPostPage() {
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>("");
   const [selectedImageDockerUrl, setSelectedImageDockerUrl] = useState<string>("");
   const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
-  const [sourceMaterials, setSourceMaterials] = useState<any[]>([]);
-  const [selectedSourceMaterial, setSelectedSourceMaterial] = useState<any>(null);
+  const [sourceMaterials, setSourceMaterials] = useState<SourceMaterial[]>([]);
+  const [selectedSourceMaterial, setSelectedSourceMaterial] = useState<SourceMaterial | null>(null);
   const { postData, setPostData } = usePost();
 
   useEffect(() => {
@@ -222,10 +234,10 @@ Based on this source material and the user's text: "${inputText}", write a good 
       
       // Map functionExecutions to toolCalls format
       if (data.functionExecutions && data.functionExecutions.length > 0) {
-        const mappedToolCalls = data.functionExecutions.map((exec: any) => ({
-          name: exec.functionName,
-          arguments: exec.parameters,
-          result: exec.result
+        const mappedToolCalls = data.functionExecutions.map((exec: Record<string, unknown>) => ({
+          name: exec.functionName as string,
+          arguments: exec.parameters as Record<string, unknown>,
+          result: exec.result as Record<string, unknown> | string
         }));
         setToolCalls(mappedToolCalls);
       }
@@ -317,10 +329,10 @@ Post this message to our Facebook page.`;
       
       // Map functionExecutions to toolCalls format and append
       if (data.functionExecutions && data.functionExecutions.length > 0) {
-        const mappedToolCalls = data.functionExecutions.map((exec: any) => ({
-          name: exec.functionName,
-          arguments: exec.parameters,
-          result: exec.result
+        const mappedToolCalls = data.functionExecutions.map((exec: Record<string, unknown>) => ({
+          name: exec.functionName as string,
+          arguments: exec.parameters as Record<string, unknown>,
+          result: exec.result as Record<string, unknown> | string
         }));
         setToolCalls([...toolCalls, ...mappedToolCalls]);
       }
@@ -405,10 +417,10 @@ Post this message to our Facebook page.`;
             <div>
               <SelectionGrid
                 items={sourceMaterials.map((material) => ({
-                  id: material.id,
+                  id: material.id ?? 0,
                   label: `${material.title} (${material.contentType.toUpperCase()})`,
                 }))}
-                selectedId={selectedSourceMaterial?.id || null}
+                selectedId={selectedSourceMaterial?.id ?? null}
                 onSelect={(id) => {
                   const material = sourceMaterials.find((m) => m.id === id);
                   if (material) {
@@ -529,8 +541,8 @@ Post this message to our Facebook page.`;
 
               <div className="flex space-x-3">
                 <button
-                  onClick={() => handlePostToFacebook(recommendation.response)}
-                  disabled={posting}
+                  onClick={() => handlePostToFacebook(recommendation.response || "")}
+                  disabled={posting || !recommendation.response}
                   className={`flex-1 py-3 px-4 rounded-lg font-semibold text-white transition-all ${
                     posting
                       ? "bg-gray-400 cursor-not-allowed"
