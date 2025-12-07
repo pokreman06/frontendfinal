@@ -1,0 +1,242 @@
+@startuml AgentController Architecture
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+
+' Styling
+skinparam class {
+    BackgroundColor<<interface>> #E1F5FE
+    BackgroundColor<<service>> #F3E5F5
+    BackgroundColor<<controller>> #FFF3E0
+    BorderColor #424242
+    ArrowColor #424242
+}
+
+package "AgentApi.Controllers" {
+    class AgentController <<controller>> {
+        - SYSTEM_MESSAGE: const string
+        - _aiService: ILocalAIService
+        - _mcpClient: IMcpClient
+        - _logger: ILogger<AgentController>
+        - _searcher: PromptSearcher
+        - _pageFetcher: WebPageFetcher
+        - _context: MyDbContext
+        - _toolOrchestrator: IToolOrchestrator
+        ---
+        + Chat(request: AgentRequest): Task<ActionResult<AgentResponse>>
+        + GetAvailableTools(): Task<ActionResult<List<FunctionTool>>>
+        + Health(): IActionResult
+        ---
+        - ProcessConversationLoopAsync(): Task<ActionResult<AgentResponse>?>
+        - HandleActionInContentAsync(): Task<ActionResult<AgentResponse>?>
+        - HandleDirectActionAsync(): Task<ActionResult<AgentResponse>?>
+        - InitializeToolsAsync(): Task<(List<FunctionTool>, List<FunctionTool>, List<FunctionTool>)>
+        - CreateLocalTool(): FunctionTool
+        - EnhanceQueryWithThemes(): string
+        - LogToolCallAsync(): Task
+    }
+}
+
+package "AgentApi.Services" {
+    interface ILocalAIService <<interface>> {
+        + SendMessageAsync(request: LocalAIRequest): Task<LocalAIResponse>
+    }
+
+    interface IMcpClient <<interface>> {
+        + GetAvailableToolsAsync(): Task<List<FunctionTool>>
+        + ExecuteToolAsync(toolName: string, args: Dictionary): Task<string>
+    }
+
+    interface IToolOrchestrator <<interface>> {
+        + ExecuteToolAsync(toolName: string, args: Dictionary): Task<ToolExecutionResult>
+        + ExecuteToolCallsAsync(toolCalls: List): Task<(List, List)>
+        + ExtractToolCalls(content: string, tools: List): List<(string, Dictionary)>
+        + IsParameterlessFunction(name: string): bool
+    }
+
+    class ToolOrchestrator <<service>> {
+        - _mcpClient: IMcpClient
+        - _searcher: PromptSearcher
+        - _pageFetcher: WebPageFetcher
+        - _toolCallExtractor: IToolCallExtractor
+        - _logger: ILogger<ToolOrchestrator>
+        ---
+        + ExecuteToolAsync()
+        + ExecuteToolCallsAsync()
+        + ExtractToolCalls()
+        + IsParameterlessFunction()
+        ---
+        - HandleWebSearchAsync(): Task<string>
+        - HandleFetchPageAsync(): Task<string>
+    }
+
+    interface IToolCallExtractor <<interface>> {
+        + ExtractToolCalls(): List<(string, Dictionary)>
+        + IsParameterlessFunction(): bool
+    }
+
+    class ToolCallExtractor <<service>> {
+        + ExtractToolCalls()
+        + IsParameterlessFunction()
+    }
+
+    class PromptSearcher <<service>> {
+        + GetQuery(): Task<List>
+    }
+
+    class WebPageFetcher <<service>> {
+        + FetchPageContent(): Task<string>
+    }
+}
+
+package "AgentApi.Models" {
+    class AgentRequest {
+        + UserMessage: string
+        + ConversationHistory: List<Message>
+        + Model: string
+        + AllowedTools: List<string>
+    }
+
+    class AgentResponse {
+        + Response: string
+        + ConversationHistory: List<Message>
+        + UsedMcp: bool
+        + ToolsUsed: List<string>
+        + FunctionExecutions: List<FunctionExecutionResult>
+    }
+
+    class Message {
+        + Role: string
+        + Content: string
+        + ToolCallId: string
+        + Name: string
+        + ToolCalls: List<ToolCall>
+    }
+
+    class FunctionTool {
+        + Type: string
+        + Function: FunctionDefinition
+    }
+
+    class FunctionExecutionResult {
+        + FunctionName: string
+        + Parameters: Dictionary
+        + Success: bool
+        + Result: string
+        + ErrorMessage: string
+    }
+
+    class LocalAIRequest {
+        + Model: string
+        + Messages: List<Message>
+        + Tools: List<FunctionTool>
+        + MaxTokens: int
+    }
+
+    class LocalAIResponse {
+        + Choices: List<Choice>
+    }
+
+    class ToolExecutionResult {
+        + FunctionName: string
+        + Parameters: Dictionary
+        + Success: bool
+        + Result: string
+        + ErrorMessage: string
+        + ExecutedAt: DateTime
+    }
+}
+
+package "Contexts" {
+    class MyDbContext {
+        + ToolCalls: DbSet<AgentToolCall>
+        + ToolSettings: DbSet<ToolSettings>
+        + QueryThemes: DbSet<QueryTheme>
+    }
+
+    class ToolSettings {
+        + ToolName: string
+        + IsEnabled: bool
+    }
+
+    class QueryTheme {
+        + Text: string
+        + Selected: bool
+    }
+
+    class AgentToolCall {
+        + ToolName: string
+        + Query: string
+        + Arguments: string
+        + Result: string
+        + ExecutedAt: DateTime
+        + DurationMs: long?
+    }
+}
+
+' Relationships
+AgentController --> ILocalAIService
+AgentController --> IMcpClient
+AgentController --> IToolOrchestrator
+AgentController --> PromptSearcher
+AgentController --> WebPageFetcher
+AgentController --> MyDbContext
+AgentController --> AgentRequest
+AgentController --> AgentResponse
+AgentController --> Message
+AgentController --> FunctionTool
+AgentController --> FunctionExecutionResult
+
+IToolOrchestrator <|-- ToolOrchestrator
+IToolCallExtractor <|-- ToolCallExtractor
+
+ToolOrchestrator --> IMcpClient
+ToolOrchestrator --> PromptSearcher
+ToolOrchestrator --> WebPageFetcher
+ToolOrchestrator --> IToolCallExtractor
+ToolOrchestrator --> ToolExecutionResult
+
+AgentController --> ILocalAIService
+ILocalAIService --> LocalAIRequest
+ILocalAIService --> LocalAIResponse
+
+MyDbContext --> AgentToolCall
+MyDbContext --> ToolSettings
+MyDbContext --> QueryTheme
+
+' Flow annotations
+note right of AgentController::Chat
+  **Main Chat Flow:**
+  1. Initialize tools
+  2. Build conversation history
+  3. Check for direct ACTION
+  4. Process conversation loop
+  5. Return response
+end note
+
+note right of AgentController::ProcessConversationLoopAsync
+  **Conversation Loop:**
+  - Send message to AI
+  - Clean up response
+  - Handle ACTION format
+  - Handle tool_calls
+  - Handle text-based tools
+  - Return final response
+end note
+
+note right of AgentController::HandleDirectActionAsync
+  **Direct Action Handler:**
+  - Extract tool calls
+  - Batch execute via orchestrator
+  - Return immediate response
+end note
+
+note right of ToolOrchestrator
+  **Tool Execution:**
+  - Route to local handlers (web_search, fetch_page)
+  - Route to MCP client for others
+  - Batch execute multiple tools
+  - Handle errors gracefully
+end note
+
+@enduml

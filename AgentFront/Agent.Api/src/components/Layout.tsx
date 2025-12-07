@@ -65,6 +65,16 @@ function Layout() {
                 Query Themes
               </Link>
               <Link
+                to="/source-materials"
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  isActive("/source-materials")
+                    ? "bg-indigo-50 text-indigo-700 font-medium"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                Source Materials
+              </Link>
+              <Link
                 to="/imagepreference"
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   isActive("/imagepreference")

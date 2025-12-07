@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { loadQueryThemes } from "../query/apiClient";
+import { loadQueryThemes, loadSourceMaterials } from "../query/apiClient";
 import { usePost } from "../context/PostContext";
+import { useAuth } from "react-oidc-context";
 import ToolUsageDisplay from "../components/ToolUsageDisplay";
 import SelectionGrid from "../components/SelectionGrid";
 
@@ -66,6 +67,7 @@ interface ToolCall {
 }
 
 export default function FacebookPostPage() {
+  const auth = useAuth();
   const [inputText, setInputText] = useState("");
   const [recommendation, setRecommendation] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -76,12 +78,19 @@ export default function FacebookPostPage() {
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>("");
   const [selectedImageDockerUrl, setSelectedImageDockerUrl] = useState<string>("");
   const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
+  const [sourceMaterials, setSourceMaterials] = useState<any[]>([]);
+  const [selectedSourceMaterial, setSelectedSourceMaterial] = useState<any>(null);
   const { postData, setPostData } = usePost();
 
   useEffect(() => {
     loadQueryThemes().then(setQueryThemes).catch(console.error);
     loadSavedImages();
-  }, []);
+    if (auth.user?.profile?.email) {
+      loadSourceMaterials(auth.user.profile.email)
+        .then(setSourceMaterials)
+        .catch((err) => console.error("Failed to load source materials:", err));
+    }
+  }, [auth.user?.profile?.email]);
 
   // Load data from context if available
   useEffect(() => {
@@ -134,8 +143,56 @@ export default function FacebookPostPage() {
     setRecommendation(null);
     setError(null);
 
+    let userMessage = `Based on this text: "${inputText}", recommend a good Facebook post message. Just provide the recommended message text, nothing else.`;
+    
+    // If a source material is selected, fetch it via the API and include content in the prompt
+    if (selectedSourceMaterial) {
+      try {
+        const apiUrl = resolveApiUrl();
+        const token = getAuthToken();
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+        
+        // Fetch the page content through the AI agent
+        const fetchPayload = {
+          userMessage: `ACTION: fetch_page
+PARAMETERS:
+url=${selectedSourceMaterial.url}`,
+          model: "gpt-oss-120b",
+          conversationHistory: [],
+        };
+        
+        const fetchRes = await fetch(`${apiUrl}/api/agent/chat`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(fetchPayload),
+        });
+        
+        if (fetchRes.ok) {
+          const fetchData = await fetchRes.json();
+          const fetchedContent = fetchData.response || fetchData.functionExecutions?.[0]?.result || "";
+          
+          userMessage = `You have access to the following source material from "${selectedSourceMaterial.title}":
+
+---
+${fetchedContent}
+---
+
+Based on this source material and the user's text: "${inputText}", write a good Facebook post message. Only provide the post message text, nothing else.`;
+        }
+      } catch (err) {
+        console.error("Failed to fetch source material content:", err);
+        // Fall back to original message if fetch fails
+        userMessage = `Based on the source material from "${selectedSourceMaterial.title}" at ${selectedSourceMaterial.url} and this text: "${inputText}", recommend a good Facebook post message. Just provide the recommended message text, nothing else.`;
+      }
+    }
+
     const payload = {
-      userMessage: `Based on this text: "${inputText}", recommend a good Facebook post message. Just provide the recommended message text, nothing else.`,
+      userMessage,
       model: "gpt-oss-120b",
       conversationHistory: [],
       queryThemes: queryThemes,
@@ -181,9 +238,16 @@ export default function FacebookPostPage() {
 
   const handlePostToFacebook = async (messageToPost: string) => {
     // Show confirmation dialog
-    const confirmMessage = selectedImageDockerUrl
-      ? `Are you sure you want to post this message with an image to Facebook?\n\n"${messageToPost}"`
-      : `Are you sure you want to post this message to Facebook?\n\n"${messageToPost}"`;
+    let confirmMessage = "";
+    if (selectedImageDockerUrl && selectedSourceMaterial) {
+      confirmMessage = `Are you sure you want to post this message with an image and source material analysis to Facebook?\n\n"${messageToPost}"`;
+    } else if (selectedImageDockerUrl) {
+      confirmMessage = `Are you sure you want to post this message with an image to Facebook?\n\n"${messageToPost}"`;
+    } else if (selectedSourceMaterial) {
+      confirmMessage = `Are you sure you want to post this message with source material analysis to Facebook?\n\n"${messageToPost}"`;
+    } else {
+      confirmMessage = `Are you sure you want to post this message to Facebook?\n\n"${messageToPost}"`;
+    }
     
     if (!window.confirm(confirmMessage)) {
       return; // User cancelled
@@ -192,13 +256,35 @@ export default function FacebookPostPage() {
     setPosting(true);
     setError(null);
 
-    const userMessage = selectedImageDockerUrl
-      ? `ACTION: post_image_to_facebook
+    let userMessage = "";
+    
+    if (selectedImageDockerUrl && selectedSourceMaterial) {
+      userMessage = `ACTION: fetch_page
+PARAMETERS:
+url=${selectedSourceMaterial.url}
+EXPLANATION: Fetching and analyzing source material.
+
+Then ACTION: post_image_to_facebook
 PARAMETERS:
 image_url=${selectedImageDockerUrl}
 caption=${messageToPost}
-EXPLANATION: Posting an image with caption to Facebook.`
-      : `Post this message to our Facebook page: "${messageToPost}"`;
+EXPLANATION: Posting an image with caption to Facebook.`;
+    } else if (selectedImageDockerUrl) {
+      userMessage = `ACTION: post_image_to_facebook
+PARAMETERS:
+image_url=${selectedImageDockerUrl}
+caption=${messageToPost}
+EXPLANATION: Posting an image with caption to Facebook.`;
+    } else if (selectedSourceMaterial) {
+      userMessage = `Based on the source material "${selectedSourceMaterial.title}" (${selectedSourceMaterial.contentType}), create an engaging Facebook post. 
+
+Material URL: ${selectedSourceMaterial.url}
+User context: ${messageToPost}
+
+Post this message to our Facebook page.`;
+    } else {
+      userMessage = `Post this message to our Facebook page: "${messageToPost}"`;
+    }
 
     const payload = {
       userMessage,
@@ -314,6 +400,40 @@ EXPLANATION: Posting an image with caption to Facebook.`
                 showLabel={false}
               />
             </div>
+
+            {/* Source Materials Selection */}
+            <div>
+              <SelectionGrid
+                items={sourceMaterials.map((material) => ({
+                  id: material.id,
+                  label: `${material.title} (${material.contentType.toUpperCase()})`,
+                }))}
+                selectedId={selectedSourceMaterial?.id || null}
+                onSelect={(id) => {
+                  const material = sourceMaterials.find((m) => m.id === id);
+                  if (material) {
+                    setSelectedSourceMaterial(material);
+                  }
+                }}
+                onDeselect={() => {
+                  setSelectedSourceMaterial(null);
+                }}
+                title="Select a Source Material (Optional)"
+                emptyMessage={
+                  <div>
+                    No saved source materials. Create them in the{" "}
+                    <a href="/source-materials" className="text-blue-600 hover:underline">
+                      Source Materials
+                    </a>{" "}
+                    page first.
+                  </div>
+                }
+                selectedMessage="Source material selected. The AI will fetch and analyze this content."
+                allowDeselect={true}
+                showLabel={true}
+              />
+            </div>
+
             <ToolUsageDisplay />
             <button
               type="submit"

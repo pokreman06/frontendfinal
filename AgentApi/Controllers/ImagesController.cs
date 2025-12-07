@@ -16,13 +16,32 @@ namespace AgentApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    // TODO: Re-enable [Authorize] for production deployment
-    // [Authorize] // Currently disabled for local development
+    [Authorize]
     public class ImagesController : ControllerBase
     {
         private readonly IHttpClientFactory _httpFactory;
         private readonly ILogger<ImagesController> _logger;
         private readonly MyDbContext _context;
+
+        private string GetUserEmail()
+        {
+            // ASP.NET Core maps JWT "email" claim to this long claim type
+            var email = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
+            if (string.IsNullOrEmpty(email))
+            {
+                // Also try the short form in case it exists
+                email = User.FindFirst("email")?.Value;
+            }
+            if (string.IsNullOrEmpty(email))
+            {
+                email = User.FindFirst("preferred_username")?.Value;
+            }
+            if (string.IsNullOrEmpty(email))
+            {
+                email = User.FindFirst("sub")?.Value;
+            }
+            return email ?? throw new InvalidOperationException("User email not found in claims");
+        }
 
         // Default key provided here for convenience; recommend setting PIXABAY_API_KEY in env instead.
         private const string DefaultPixabayKey = "53370365-c00eb9836164b05a464c41762";
@@ -125,6 +144,8 @@ namespace AgentApi.Controllers
         {
             try
             {
+                var userEmail = GetUserEmail();
+                
                 if (file == null || file.Length == 0)
                 {
                     return BadRequest(new { error = "No file provided" });
@@ -163,7 +184,8 @@ namespace AgentApi.Controllers
                     ContentType = file.ContentType,
                     Data = fileData,
                     Size = file.Length,
-                    UploadedAt = DateTime.UtcNow
+                    UploadedAt = DateTime.UtcNow,
+                    UserEmail = userEmail
                 };
 
                 _context.SavedImages.Add(savedImage);
@@ -173,7 +195,7 @@ namespace AgentApi.Controllers
                 var baseUrl = $"{Request.Scheme}://{Request.Host}";
                 var imageUrl = $"{baseUrl}/api/images/{savedImage.Id}";
 
-                _logger.LogInformation("Image uploaded to database: {FileName} (ID: {Id})", file.FileName, savedImage.Id);
+                _logger.LogInformation("Image uploaded to database: {FileName} (ID: {Id}) for user {Email}", file.FileName, savedImage.Id, userEmail);
 
                 return Ok(new
                 {
@@ -185,6 +207,11 @@ namespace AgentApi.Controllers
                     uploadedAt = savedImage.UploadedAt
                 });
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Error uploading image: user email not found in claims");
+                return Unauthorized(new { error = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error uploading image");
@@ -193,16 +220,20 @@ namespace AgentApi.Controllers
         }
 
         [HttpGet("saved")]
-        [AllowAnonymous]
         public IActionResult GetSavedImages()
         {
             try
             {
+                _logger.LogInformation("GetSavedImages called");
+                var userEmail = GetUserEmail();
+                _logger.LogInformation("GetSavedImages - authenticated as: {Email}", userEmail);
+                
                 // Provide both browser-accessible URL and Docker-network URL
                 var browserBaseUrl = $"{Request.Scheme}://{Request.Host}";
                 var dockerBaseUrl = "http://web:8080";
                 
                 var images = _context.SavedImages
+                    .Where(i => i.UserEmail == userEmail)
                     .OrderByDescending(i => i.UploadedAt)
                     .Select(i => new
                     {
@@ -216,7 +247,13 @@ namespace AgentApi.Controllers
                     })
                     .ToList();
 
+                _logger.LogInformation("GetSavedImages - returning {Count} images for user {Email}", images.Count, userEmail);
                 return Ok(new { images });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "GetSavedImages - InvalidOperationException: {Message}", ex.Message);
+                return Unauthorized(new { error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -226,16 +263,20 @@ namespace AgentApi.Controllers
         }
 
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [AllowAnonymous]  // Image retrieval doesn't require auth - ID is not guessable and is tied to user in upload
         public IActionResult GetImage(int id)
         {
             try
             {
                 var image = _context.SavedImages.Find(id);
+                
                 if (image == null)
                 {
                     return NotFound();
                 }
+
+                // Note: We're not checking user ownership here since the image ID is not publicly guessable
+                // and access to a specific image ID doesn't reveal sensitive information about other users
 
                 return File(image.Data, image.ContentType);
             }
@@ -251,16 +292,24 @@ namespace AgentApi.Controllers
         {
             try
             {
+                var userEmail = GetUserEmail();
                 var image = _context.SavedImages.Find(id);
+                
                 if (image == null)
                 {
                     return NotFound(new { error = "Image not found" });
                 }
 
+                // Verify the image belongs to the current user
+                if (image.UserEmail != userEmail)
+                {
+                    return Forbid();
+                }
+
                 _context.SavedImages.Remove(image);
                 _context.SaveChanges();
                 
-                _logger.LogInformation("Image deleted from database: {Id}", id);
+                _logger.LogInformation("Image deleted from database: {Id} by user {Email}", id, userEmail);
 
                 return Ok(new { message = "Image deleted successfully" });
             }

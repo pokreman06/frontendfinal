@@ -4,6 +4,7 @@ services:
       context: .
     depends_on:
       - postgres
+      - facebook-mcp-service
     environment:
       # For local development you can set DATABASE_URL to point to a local or remote DB.
       # Example: "Host=host.docker.internal;Port=5432;Database=mydb;Username=myuser;Password=mypassword"
@@ -12,6 +13,7 @@ services:
       GOOGLE_API: AIzaSyD6ZjtfC8q-RLrvqxDnDLmCLj8Imbvyyj8
       CUSTOM_SEARCH_ENGINE: f642808a9e0124077
       PIXABAY_API_KEY: ${PIXABAY_API_KEY}
+      MCP_SERVICE_URL: "http://facebook-mcp-service:8000"
     ports:
       - "8000:8080"
   

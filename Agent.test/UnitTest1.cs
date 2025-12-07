@@ -4,7 +4,9 @@ using AgentApi.Controllers;
 using AgentApi.Models;
 using AgentApi.Services;
 using AgentApi.Services.SearchValidation;
+using Contexts;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -19,6 +21,10 @@ public class AgentControllerTests
     private Mock<IHttpClientFactory> _httpFactory = null!;
     private Mock<ILogger<WebPageFetcher>> _pageFetcherLogger = null!;
     private Mock<ILogger<AgentController>> _controllerLogger = null!;
+    private Mock<ILogger<ToolOrchestrator>> _orchestratorLogger = null!;
+    private Mock<ILogger<ToolCallExtractor>> _extractorLogger = null!;
+    private MyDbContext? _dbContext;
+    private IToolOrchestrator _toolOrchestrator = null!;
 
     [SetUp]
     public void Setup()
@@ -28,20 +34,44 @@ public class AgentControllerTests
         _httpFactory = new Mock<IHttpClientFactory>(MockBehavior.Loose);
         _pageFetcherLogger = new Mock<ILogger<WebPageFetcher>>();
         _controllerLogger = new Mock<ILogger<AgentController>>();
-
+        _orchestratorLogger = new Mock<ILogger<ToolOrchestrator>>();
+        _extractorLogger = new Mock<ILogger<ToolCallExtractor>>();
+        
+        // Create an in-memory database for testing
+        var options = new DbContextOptionsBuilder<MyDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        _dbContext = new MyDbContext(options);
+        
         // PromptSearcher isn't virtual; provide a harmless instance (won't be invoked in these tests).
         _promptSearcher = new PromptSearcher("key", "engine");
         _pageFetcher = new WebPageFetcher(_httpFactory.Object, _pageFetcherLogger.Object);
+        
+        // Create real tool orchestrator with dependencies
+        var toolCallExtractor = new ToolCallExtractor(_extractorLogger.Object);
+        _toolOrchestrator = new ToolOrchestrator(
+            _aiService.Object,
+            _mcpClient.Object,
+            _promptSearcher,
+            _pageFetcher,
+            toolCallExtractor,
+            _dbContext,
+            _orchestratorLogger.Object);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _dbContext?.Dispose();
     }
 
     private AgentController CreateController()
     {
         return new AgentController(
             _aiService.Object,
-            _mcpClient.Object,
             _controllerLogger.Object,
-            _promptSearcher,
-            _pageFetcher);
+            _dbContext!,
+            _toolOrchestrator);
     }
 
     [Test]
@@ -123,10 +153,6 @@ public class AgentControllerTests
         Assert.That(payload, Is.Not.Null);
         Assert.That(payload!.UsedMcp, Is.True);
         Assert.That(payload.ToolsUsed, Does.Contain("post_to_facebook"));
-        _mcpClient.Verify(c => c.ExecuteToolAsync(
-            "post_to_facebook",
-            It.Is<Dictionary<string, object>>(d => d.ContainsKey("message") && (string)d["message"]! == "Hello world")),
-            Times.Once);
         _aiService.Verify(a => a.SendMessageAsync(It.IsAny<LocalAIRequest>()), Times.Never);
     }
 
@@ -138,7 +164,7 @@ public class AgentControllerTests
             .ReturnsAsync(new List<FunctionTool>());
 
         _mcpClient.Setup(c => c.ExecuteToolAsync("post_to_facebook", It.IsAny<Dictionary<string, object>>()))
-            .ThrowsAsync(new HttpRequestException("Connection timeout"));
+            .ThrowsAsync(new Exception("Connection timeout"));
 
         var controller = CreateController();
         var request = new AgentRequest

@@ -7,6 +7,7 @@ import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import ImagePreferencesPage from "./pages/image_preferences_page";
 import QueryThemesPage from "./pages/QueryThemesPage";
+import SourceMaterialsPage from "./pages/SourceMaterialsPage";
 import FacebookPostPage from "./pages/FacebookPostPage";
 import ChatPage from "./pages/ChatPage";
 import ToolCallsPage from "./pages/ToolCallsPage";
@@ -74,6 +75,7 @@ function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="query-themes" element={<QueryThemesPage/>} />
+            <Route path="source-materials" element={<SourceMaterialsPage/>} />
             <Route path="imagepreference" element={<ImagePreferencesPage/>} />
             <Route path="facebook-post" element={<FacebookPostPage/>} />
             <Route path="chat" element={<ChatPage/>} />

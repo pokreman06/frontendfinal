@@ -42,10 +42,16 @@ export type ApiClientOptions = RequestInit & { baseUrl?: string; suppressToast?:
 // Helper to get the auth token from sessionStorage (set by the auth context)
 function getAuthToken(): string | null {
   try {
-    const authData = sessionStorage.getItem("oidc.user:https://auth-dev.snowse.io/realms/DevRealm:nagent");
-    if (authData) {
-      const user = JSON.parse(authData);
-      return user.access_token || null;
+    // Try different client IDs that might be in use
+    const clientIds = ['nagent', 'nathan_react'];
+    for (const clientId of clientIds) {
+      const authData = sessionStorage.getItem(`oidc.user:https://auth-dev.snowse.io/realms/DevRealm:${clientId}`);
+      if (authData) {
+        const user = JSON.parse(authData);
+        if (user.access_token) {
+          return user.access_token;
+        }
+      }
     }
   } catch (e) {
     console.debug("Failed to retrieve auth token from sessionStorage", e);
@@ -146,6 +152,76 @@ export async function saveQueryThemeSelection(selectedTexts: string[]): Promise<
     });
   } catch (err) {
     console.warn("saveQueryThemeSelection: API save failed", err);
+  }
+}
+
+// Source Materials interface and helpers
+export interface SourceMaterial {
+  id?: number;
+  email?: string;
+  url: string;
+  title: string;
+  contentType: "pdf" | "html";
+  description?: string;
+  createdAt?: string;
+}
+
+const SOURCES_STORAGE_KEY = "source_materials";
+
+export async function loadSourceMaterials(email: string): Promise<SourceMaterial[]> {
+  try {
+    const data = await apiClient<SourceMaterial[]>(
+      `/sourcematerials/user/${encodeURIComponent(email)}`,
+      { suppressToast: true }
+    );
+    console.log("loadSourceMaterials API response:", data);
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.warn("loadSourceMaterials: falling back to localStorage", err);
+    try {
+      const raw = localStorage.getItem(SOURCES_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.error("loadSourceMaterials: localStorage parse failed", e);
+      return [];
+    }
+  }
+}
+
+export async function saveSourceMaterial(material: SourceMaterial): Promise<SourceMaterial> {
+  try {
+    const data = await apiClient<SourceMaterial>("/sourcematerials", {
+      method: "POST",
+      body: JSON.stringify(material),
+    });
+    return data || material;
+  } catch (err) {
+    console.warn("saveSourceMaterial: API save failed", err);
+    throw err;
+  }
+}
+
+export async function updateSourceMaterial(id: number, material: SourceMaterial): Promise<SourceMaterial> {
+  try {
+    const data = await apiClient<SourceMaterial>(`/sourcematerials/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(material),
+    });
+    return data || material;
+  } catch (err) {
+    console.warn("updateSourceMaterial: API update failed", err);
+    throw err;
+  }
+}
+
+export async function deleteSourceMaterial(id: number): Promise<void> {
+  try {
+    await apiClient<void>(`/sourcematerials/${id}`, {
+      method: "DELETE",
+    });
+  } catch (err) {
+    console.warn("deleteSourceMaterial: API delete failed", err);
+    throw err;
   }
 }
 

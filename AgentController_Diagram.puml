@@ -1,0 +1,125 @@
+@startuml AgentController_Architecture_Refactored
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #E1D5E7
+skinparam classBorderColor #9673A6
+skinparam classArrowColor #9673A6
+skinparam arrowColor #9673A6
+
+' Interfaces
+interface IToolOrchestrator {
+  + ExecuteToolAsync(toolName, args): Task<ToolExecutionResult>
+  + ExtractToolCalls(content, availableTools): List<(string, Dictionary)>
+  + IsParameterlessFunction(functionName): bool
+}
+
+interface IToolCallExtractor {
+  + ExtractToolCalls(content, availableTools): List<(string, Dictionary)>
+  + IsParameterlessFunction(functionName): bool
+}
+
+' Classes
+class AgentController {
+  == DEPENDENCIES ==
+  - _aiService: ILocalAIService
+  - _mcpClient: IMcpClient
+  - _logger: ILogger<AgentController>
+  - _searcher: PromptSearcher
+  - _pageFetcher: WebPageFetcher
+  - _context: MyDbContext
+  - _toolOrchestrator: IToolOrchestrator
+  
+  == CONSTRUCTOR ==
+  + AgentController(..., toolOrchestrator)
+  
+  == PUBLIC METHODS ==
+  + Chat(request): Task<ActionResult<AgentResponse>>
+  + GetAvailableTools(): Task<ActionResult<List<FunctionTool>>>
+  + Health(): IActionResult
+  
+  == PRIVATE METHODS ==
+  - EnhanceQueryWithThemes(query): string
+  - CreateLocalTool(...): FunctionTool
+  - LogToolCallAsync(...): Task
+}
+
+class ToolOrchestrator {
+  == DEPENDENCIES ==
+  - _mcpClient: IMcpClient
+  - _searcher: PromptSearcher
+  - _pageFetcher: WebPageFetcher
+  - _toolCallExtractor: IToolCallExtractor
+  - _logger: ILogger<ToolOrchestrator>
+  
+  == PUBLIC METHODS ==
+  + ExecuteToolAsync(toolName, args): Task<ToolExecutionResult>
+  + ExtractToolCalls(content, tools): List<(string, Dictionary)>
+  + IsParameterlessFunction(functionName): bool
+  
+  == PRIVATE METHODS ==
+  - HandleWebSearchAsync(args): Task<string>
+  - HandleFetchPageAsync(args): Task<string>
+}
+
+class ToolCallExtractor {
+  == DEPENDENCIES ==
+  - _logger: ILogger<ToolCallExtractor>
+  
+  == PUBLIC METHODS ==
+  + ExtractToolCalls(content, tools): List<(string, Dictionary)>
+  + IsParameterlessFunction(functionName): bool
+  
+  == PRIVATE METHODS ==
+  - ExtractActionFormatToolCalls(content): List
+  - ExtractJsonFormatToolCalls(content): List
+  - ExtractJsonParameters(root): Dictionary
+}
+
+class ToolExecutionResult {
+  + FunctionName: string
+  + Parameters: Dictionary<string, object>
+  + Success: bool
+  + Result: string
+  + ErrorMessage: string
+  + ExecutedAt: DateTime
+}
+
+' Relationships
+AgentController --> IToolOrchestrator : uses
+ToolOrchestrator ..|> IToolOrchestrator : implements
+ToolOrchestrator --> IToolCallExtractor : delegates
+ToolCallExtractor ..|> IToolCallExtractor : implements
+ToolOrchestrator --> ToolExecutionResult : returns
+AgentController --> ToolExecutionResult : consumes
+
+note right of AgentController
+  **Responsibility:**
+  - Coordinate chat API requests
+  - Manage conversation history
+  - Handle tool result integration
+  
+  **Reduced from 500 to ~250 lines**
+end note
+
+note right of ToolOrchestrator
+  **Responsibility:**
+  - Execute tool calls
+  - Handle web_search & fetch_page
+  - Route to MCP client
+  - Manage tool lifecycle
+  
+  **~150 lines**
+end note
+
+note right of ToolCallExtractor
+  **Responsibility:**
+  - Parse ACTION format
+  - Parse JSON format
+  - Extract parameters
+  - Validate functions
+  
+  **~200 lines**
+end note
+
+@enduml
+

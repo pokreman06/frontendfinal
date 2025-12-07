@@ -80,12 +80,26 @@ public class MyDbContext : DbContext
             entity.Property(e => e.IsEnabled).HasColumnName("is_enabled");
             entity.Property(e => e.Description).HasColumnName("description");
         });
+
+        // Source materials table
+        modelBuilder.Entity<SourceMaterial>(entity =>
+        {
+            entity.ToTable("source_materials");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Email).HasColumnName("email");
+            entity.Property(e => e.Url).HasColumnName("url");
+            entity.Property(e => e.Title).HasColumnName("title");
+            entity.Property(e => e.ContentType).HasColumnName("content_type");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+        });
     }
     public DbSet<User> Users { get; set; }
     public DbSet<QueryTheme> QueryThemes { get; set; }
     public DbSet<SavedImage> SavedImages { get; set; }
     public DbSet<AgentToolCall> ToolCalls { get; set; }
     public DbSet<ToolSettings> ToolSettings { get; set; }
+    public DbSet<SourceMaterial> SourceMaterials { get; set; }
 }
 
 public class User
@@ -118,6 +132,7 @@ public class QueryTheme
     public int Id { get; set; }
     public string Text { get; set; } = string.Empty;
     public bool Selected { get; set; } = true;
+    public string UserEmail { get; set; } = string.Empty;
 }
 
 public class SavedImage
@@ -129,6 +144,7 @@ public class SavedImage
     public byte[] Data { get; set; } = Array.Empty<byte>();
     public long Size { get; set; }
     public DateTime UploadedAt { get; set; }
+    public string UserEmail { get; set; } = string.Empty;
 }
 
 public class AgentToolCall
@@ -148,4 +164,15 @@ public class ToolSettings
     public string ToolName { get; set; } = string.Empty;
     public bool IsEnabled { get; set; } = true;
     public string Description { get; set; } = string.Empty;
+}
+
+public class SourceMaterial
+{
+    public int Id { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty; // "pdf" or "html"
+    public string Description { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

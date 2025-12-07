@@ -3,6 +3,7 @@ using System;
 using Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AgentApi.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251207050459_AddSourceMaterials")]
+    partial class AddSourceMaterials
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -126,10 +129,6 @@ namespace AgentApi.Migrations
                         .HasColumnType("text")
                         .HasColumnName("text");
 
-                    b.Property<string>("UserEmail")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
                     b.ToTable("query_themes", (string)null);
@@ -171,10 +170,6 @@ namespace AgentApi.Migrations
                     b.Property<DateTime>("UploadedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("uploaded_at");
-
-                    b.Property<string>("UserEmail")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

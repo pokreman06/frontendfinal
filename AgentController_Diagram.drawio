@@ -1,0 +1,171 @@
+<mxfile host="drawio" modified="2025-12-06T00:00:00.000Z" agent="Copilot" version="20.8.1" type="device">
+  <diagram name="AgentController Architecture" id="controller-diagram">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="base0" />
+        <mxCell id="base1" parent="base0" />
+        
+        <!-- Main Class Box -->
+        <mxCell id="class-box" value="AgentController" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=14;fontStyle=1;" parent="base1" vertex="1">
+          <mxGeometry x="50" y="20" width="1100" height="750" as="geometry" />
+        </mxCell>
+        
+        <!-- Fields Section -->
+        <mxCell id="fields-header" value="FIELDS (Dependencies)" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=12;fontStyle=1;fillColor=#f8cecc;strokeColor=#b85450;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="26" width="1100" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="field-1" value="- _aiService: ILocalAIService" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="46" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="field-2" value="- _mcpClient: IMcpClient" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="64" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="field-3" value="- _logger: ILogger&lt;AgentController&gt;" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="82" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="field-4" value="- _searcher: PromptSearcher" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="100" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="field-5" value="- _pageFetcher: WebPageFetcher" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="118" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="field-6" value="- _context: MyDbContext" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="136" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <!-- Divider -->
+        <mxCell id="divider-1" value="" style="line;strokeWidth=2;html=1;strokeColor=#000000;" parent="base1" vertex="1">
+          <mxGeometry y="154" width="1100" height="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Constructor Section -->
+        <mxCell id="constructor-header" value="CONSTRUCTOR" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=12;fontStyle=1;fillColor=#d5e8d4;strokeColor=#82b366;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="155" width="1100" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="constructor" value="+ AgentController(aiService, mcpClient, logger, searcher, pageFetcher, context)" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="175" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <!-- Divider -->
+        <mxCell id="divider-2" value="" style="line;strokeWidth=2;html=1;strokeColor=#000000;" parent="base1" vertex="1">
+          <mxGeometry y="193" width="1100" height="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Public Methods Section -->
+        <mxCell id="public-header" value="PUBLIC METHODS (Endpoints)" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=12;fontStyle=1;fillColor=#e1d5e7;strokeColor=#9673a6;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="194" width="1100" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-1" value="+ Chat(request): Task&lt;ActionResult&lt;AgentResponse&gt;&gt;  [POST /chat]" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="214" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-1-desc" value="   └─ Handles AI chat with tool execution orchestration" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=10;html=1;fontColor=#666666;" parent="base1" vertex="1">
+          <mxGeometry y="232" width="1100" height="16" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-2" value="+ GetAvailableTools(): Task&lt;ActionResult&lt;List&lt;FunctionTool&gt;&gt;&gt;  [GET /tools]" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="248" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-2-desc" value="   └─ Returns list of available MCP tools" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=10;html=1;fontColor=#666666;" parent="base1" vertex="1">
+          <mxGeometry y="266" width="1100" height="16" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-3" value="+ Health(): IActionResult  [GET /health]" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="282" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-3-desc" value="   └─ Health check endpoint returning status" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=10;html=1;fontColor=#666666;" parent="base1" vertex="1">
+          <mxGeometry y="300" width="1100" height="16" as="geometry" />
+        </mxCell>
+        
+        <!-- Divider -->
+        <mxCell id="divider-3" value="" style="line;strokeWidth=2;html=1;strokeColor=#000000;" parent="base1" vertex="1">
+          <mxGeometry y="316" width="1100" height="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Private Methods Section -->
+        <mxCell id="private-header" value="PRIVATE METHODS (Helpers)" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=12;fontStyle=1;fillColor=#ffe6cc;strokeColor=#d79b00;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="317" width="1100" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-4" value="- ExtractToolCallsFromText(content, availableTools): List&lt;(string, Dictionary)&gt;" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="337" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-4-desc" value="   └─ Parses ACTION format and JSON from AI responses" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=10;html=1;fontColor=#666666;" parent="base1" vertex="1">
+          <mxGeometry y="355" width="1100" height="16" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-5" value="- IsParameterlessFunction(functionName): bool" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="371" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-5-desc" value="   └─ Checks if a function doesn't require parameters" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=10;html=1;fontColor=#666666;" parent="base1" vertex="1">
+          <mxGeometry y="389" width="1100" height="16" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-6" value="- EnhanceQueryWithThemes(query): string" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="405" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-6-desc" value="   └─ Enhances search queries with selected themes from DB" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=10;html=1;fontColor=#666666;" parent="base1" vertex="1">
+          <mxGeometry y="423" width="1100" height="16" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-7" value="- CreateLocalTool(name, description, parameters): FunctionTool" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="439" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-7-desc" value="   └─ Creates tool definitions for web_search and fetch_page" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=10;html=1;fontColor=#666666;" parent="base1" vertex="1">
+          <mxGeometry y="457" width="1100" height="16" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-8" value="- LogToolCallAsync(toolName, query, arguments, result, durationMs): Task" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="473" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="method-8-desc" value="   └─ Records tool execution logs to database" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=10;html=1;fontColor=#666666;" parent="base1" vertex="1">
+          <mxGeometry y="491" width="1100" height="16" as="geometry" />
+        </mxCell>
+        
+        <!-- Summary Section -->
+        <mxCell id="summary-header" value="SUMMARY" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=12;fontStyle=1;fillColor=#f0f0f0;strokeColor=#666666;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="507" width="1100" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="summary-1" value="• 3 Public Endpoints:  Chat (main orchestrator), GetAvailableTools, Health check" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="527" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="summary-2" value="• 5 Private Helpers: Tool extraction, parameter validation, query enhancement, tool creation, logging" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="545" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="summary-3" value="• 6 Dependencies: AI service, MCP client, logger, search service, web fetcher, database context" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="563" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="summary-4" value="• Main Responsibility: Orchestrate AI-powered agent that can search web, fetch pages, execute MCP tools" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="581" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="summary-5" value="• Refactoring Opportunities: Extract tool execution logic, create dedicated orchestrator class" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="599" width="1100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="summary-6" value="• Code Complexity: Chat() method is ~500 lines - primary refactoring target" style="text;spacingTop=4;verticalAlign=top;verticalSpacing=4;overflow=hidden;rotatable=0;points=[[0,0],[1,0],[1,1],[0,1]];portConstraint=eastwest;fontSize=11;html=1;" parent="base1" vertex="1">
+          <mxGeometry y="617" width="1100" height="18" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
