@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePost } from "../context/PostContext";
 
 interface ToolCall {
@@ -9,14 +9,77 @@ interface ToolCall {
 
 interface ToolUsageDisplayProps {
   toolCalls?: ToolCall[];
+  query?: string; // The query that generated these tool calls
 }
 
-export default function ToolUsageDisplay({ toolCalls: propToolCalls }: ToolUsageDisplayProps = {}) {
+export default function ToolUsageDisplay({ toolCalls: propToolCalls, query }: ToolUsageDisplayProps = {}) {
   const [hoveredTool, setHoveredTool] = useState<number | null>(null);
   const { postData } = usePost();
 
   // Use prop toolCalls if provided, otherwise use context
   const toolCalls = propToolCalls || postData?.toolCalls || [];
+
+  // Store tool calls when they change
+  useEffect(() => {
+    if (toolCalls && toolCalls.length > 0) {
+      toolCalls.forEach((tool) => {
+        storeToolCall(tool.name, query || "", tool.arguments || {}, tool.result || "");
+      });
+    }
+  }, [toolCalls, query]);
+
+  const storeToolCall = async (toolName: string, queryText: string, args: any, result: any) => {
+    try {
+      // Resolve API base URL
+      const apiBase = resolveApiUrl();
+      
+      const response = await fetch(`${apiBase}/api/tool-calls`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          toolName,
+          query: queryText,
+          arguments: JSON.stringify(args),
+          result: JSON.stringify(result),
+          executedAt: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        console.warn("Failed to store tool call:", response.status);
+      }
+    } catch (err) {
+      console.warn("Error storing tool call:", err);
+    }
+  };
+
+  const resolveApiUrl = (): string => {
+    const raw = import.meta.env.VITE_API_URL as string | undefined;
+    const envUrl = raw?.replace(/\/$/, "");
+    if (envUrl) {
+      if (/^https?:\/\//i.test(envUrl)) return envUrl;
+      if (
+        envUrl.startsWith("localhost") ||
+        envUrl.startsWith("127.") ||
+        envUrl.startsWith("0.") ||
+        /:\d+$/.test(envUrl)
+      ) {
+        return `http://${envUrl}`;
+      }
+      return `https://${envUrl}`;
+    }
+
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      if (host === "localhost" || host === "127.0.0.1") {
+        return "http://localhost:8000";
+      }
+    }
+
+    return "https://api.nagent.duckdns.org";
+  };
 
   if (!toolCalls || toolCalls.length === 0) {
     return null;

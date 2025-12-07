@@ -9,6 +9,8 @@ import ImagePreferencesPage from "./pages/image_preferences_page";
 import QueryThemesPage from "./pages/QueryThemesPage";
 import FacebookPostPage from "./pages/FacebookPostPage";
 import ChatPage from "./pages/ChatPage";
+import ToolCallsPage from "./pages/ToolCallsPage";
+import ToolSettingsPage from "./pages/ToolSettingsPage";
 import { PostProvider } from "./context/PostContext";
 import ToolUsageDisplay from "./components/ToolUsageDisplay";
 
@@ -75,6 +77,8 @@ function App() {
             <Route path="imagepreference" element={<ImagePreferencesPage/>} />
             <Route path="facebook-post" element={<FacebookPostPage/>} />
             <Route path="chat" element={<ChatPage/>} />
+            <Route path="tool-calls" element={<ToolCallsPage/>} />
+            <Route path="tool-settings" element={<ToolSettingsPage/>} />
             <Route path="tool-usage-display" element={<PostProvider><ToolUsageDisplay toolCalls={[{name: "gaybacon", arguments:{}, result: "yay" }]} /></PostProvider>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

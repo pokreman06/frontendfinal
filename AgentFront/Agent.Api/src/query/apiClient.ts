@@ -137,3 +137,59 @@ export async function saveQueryThemes(themes: string[]): Promise<void> {
     }
   }
 }
+
+export async function saveQueryThemeSelection(selectedTexts: string[]): Promise<void> {
+  try {
+    await apiClient<void>("/query-themes/selection", {
+      method: "POST",
+      body: JSON.stringify({ selectedTexts }),
+    });
+  } catch (err) {
+    console.warn("saveQueryThemeSelection: API save failed", err);
+  }
+}
+
+export interface ToolCall {
+  id: number;
+  toolName: string;
+  query: string;
+  arguments?: any;
+  result?: any;
+  executedAt: string;
+  durationMs?: number;
+}
+
+export interface ToolCallsResponse {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  toolCalls: ToolCall[];
+}
+
+export async function loadToolCalls(page: number = 1, pageSize: number = 50, toolName?: string): Promise<ToolCallsResponse> {
+  try {
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("pageSize", pageSize.toString());
+    if (toolName) {
+      params.append("toolName", toolName);
+    }
+    
+    const data = await apiClient<ToolCallsResponse>(`/tool-calls?${params}`, { suppressToast: true });
+    return data ?? { total: 0, page: 1, pageSize: 50, totalPages: 0, toolCalls: [] };
+  } catch (err) {
+    console.error("loadToolCalls: failed", err);
+    return { total: 0, page: 1, pageSize: 50, totalPages: 0, toolCalls: [] };
+  }
+}
+
+export async function loadToolCallStats(): Promise<any[]> {
+  try {
+    const data = await apiClient<{ stats: any[] }>("/tool-calls/stats", { suppressToast: true });
+    return data?.stats ?? [];
+  } catch (err) {
+    console.error("loadToolCallStats: failed", err);
+    return [];
+  }
+}

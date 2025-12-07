@@ -112,6 +112,33 @@ using (var scope = app.Services.CreateScope())
 app.MapGet("/", () => "hello world");
 app.MapGet("/user", (MyDbContext context) => { return context.Users; });
 
+// Apply pending migrations at startup
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<MyDbContext>();
+        var pendingMigrations = db.Database.GetPendingMigrations().ToList();
+        if (pendingMigrations.Any())
+        {
+            Console.WriteLine($"Applying {pendingMigrations.Count} pending migrations...");
+            foreach (var migration in pendingMigrations)
+            {
+                Console.WriteLine($"  - {migration}");
+            }
+            db.Database.Migrate();
+            Console.WriteLine("Migrations applied successfully.");
+        }
+        else
+        {
+            Console.WriteLine("No pending migrations.");
+        }
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error applying migrations: {ex.Message}");
+}
 
 app.Run();
 

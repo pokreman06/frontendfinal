@@ -9,6 +9,8 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using Contexts;
 
 namespace AgentApi.Controllers
 {
@@ -21,19 +23,22 @@ namespace AgentApi.Controllers
         private readonly ILogger<AgentController> _logger;
         private readonly PromptSearcher _searcher;
         private readonly WebPageFetcher _pageFetcher;
+        private readonly MyDbContext _context;
 
         public AgentController(
             ILocalAIService aiService, 
             IMcpClient mcpClient,
             ILogger<AgentController> logger,
             PromptSearcher searcher,
-            WebPageFetcher pageFetcher)
+            WebPageFetcher pageFetcher,
+            MyDbContext context)
         {
             _aiService = aiService;
             _mcpClient = mcpClient;
             _logger = logger;
             _searcher = searcher;
             _pageFetcher = pageFetcher;
+            _context = context;
         }
 
         [HttpPost("chat")]
@@ -62,15 +67,35 @@ namespace AgentApi.Controllers
                 allTools.AddRange(localTools);
                 allTools.AddRange(mcpTools);
                 
-                // Filter tools if AllowedTools is specified
+                // Filter tools: prioritize AllowedTools from request, then fall back to database settings
                 if (request.AllowedTools != null && request.AllowedTools.Count > 0)
                 {
                     allTools = allTools.Where(t => request.AllowedTools.Contains(t.Function.Name)).ToList();
-                    _logger.LogInformation("Filtered to {Count} allowed tools: {Tools}", 
+                    _logger.LogInformation("Filtered to {Count} allowed tools (from request): {Tools}", 
                         allTools.Count, string.Join(", ", allTools.Select(t => t.Function.Name)));
                 }
+                else
+                {
+                    // Fall back to database tool settings
+                    var enabledToolNames = await _context.ToolSettings
+                        .Where(t => t.IsEnabled)
+                        .Select(t => t.ToolName)
+                        .ToListAsync();
+                    
+                    if (enabledToolNames.Count > 0)
+                    {
+                        allTools = allTools.Where(t => enabledToolNames.Contains(t.Function.Name)).ToList();
+                        _logger.LogInformation("Filtered to {Count} enabled tools (from database): {Tools}", 
+                            allTools.Count, string.Join(", ", allTools.Select(t => t.Function.Name)));
+                    }
+                    else
+                    {
+                        // If no tools are enabled in database, use all tools by default
+                        _logger.LogInformation("No tool settings configured, using all {Count} available tools", allTools.Count);
+                    }
+                }
                 
-                _logger.LogInformation("Available tools: {LocalCount} local + {McpCount} MCP = {Total} total", 
+                _logger.LogInformation("Final tool set: {LocalCount} local + {McpCount} MCP = {Total} total", 
                     localTools.Count, mcpTools.Count, allTools.Count);
 
                 // Build conversation history with system message
@@ -139,9 +164,10 @@ Always use this exact format when you need to perform an action."
                                         {
                                             fileType = ft;
                                         }
-                                        var searchResults = await _searcher.GetQuery(query, fileType);
-                                        result = JsonSerializer.Serialize(new { results = searchResults });
-                                        _logger.LogInformation("Web search executed for query: {Query}, file_type: {FileType}, found {Count} results", query, fileType ?? "none", searchResults.Count);
+                                        var enhancedQuery = EnhanceQueryWithThemes(query);
+                                        var searchResults = await _searcher.GetQuery(enhancedQuery, fileType);
+                                        result = JsonSerializer.Serialize(new { results = searchResults, originalQuery = query, enhancedQuery = enhancedQuery });
+                                        _logger.LogInformation("Web search executed for query: {Query}, enhanced: {Enhanced}, file_type: {FileType}, found {Count} results", query, enhancedQuery, fileType ?? "none", searchResults.Count);
                                     }
                                     else
                                     {
@@ -308,10 +334,11 @@ Always use this exact format when you need to perform an action."
                                             {
                                                 fileType = ft;
                                             }
-                                            var searchResults = await _searcher.GetQuery(query, fileType);
-                                            result = JsonSerializer.Serialize(new { results = searchResults });
-                                            _logger.LogInformation("Web search executed: {Query}, file_type: {FileType}, found {Count} results", 
-                                                query, fileType ?? "none", searchResults.Count);
+                                            var enhancedQuery = EnhanceQueryWithThemes(query);
+                                            var searchResults = await _searcher.GetQuery(enhancedQuery, fileType);
+                                            result = JsonSerializer.Serialize(new { results = searchResults, originalQuery = query, enhancedQuery = enhancedQuery });
+                                            _logger.LogInformation("Web search executed: {Query}, enhanced: {Enhanced}, file_type: {FileType}, found {Count} results", 
+                                                query, enhancedQuery, fileType ?? "none", searchResults.Count);
                                         }
                                         else
                                         {
@@ -393,8 +420,9 @@ Always use this exact format when you need to perform an action."
                                         {
                                             fileType = fileTypeElement.GetString();
                                         }
-                                        var searchResults = await _searcher.GetQuery(query, fileType);
-                                        result = JsonSerializer.Serialize(new { results = searchResults });
+                                        var enhancedQuery = EnhanceQueryWithThemes(query);
+                                        var searchResults = await _searcher.GetQuery(enhancedQuery, fileType);
+                                        result = JsonSerializer.Serialize(new { results = searchResults, originalQuery = query, enhancedQuery = enhancedQuery });
                                     }
                                     else
                                     {
@@ -687,6 +715,33 @@ Always use this exact format when you need to perform an action."
             return functionName == "get_page_posts";
         }
 
+        private string EnhanceQueryWithThemes(string query)
+        {
+            try
+            {
+                // Only load selected themes
+                var themes = _context.QueryThemes
+                    .Where(q => q.Selected)
+                    .Select(q => q.Text)
+                    .ToList();
+                if (themes.Any())
+                {
+                    var themesStr = string.Join(" ", themes);
+                    _logger.LogInformation("Enhancing query '{Query}' with {Count} selected themes: {Themes}", query, themes.Count, themesStr);
+                    return $"{query} {themesStr}";
+                }
+                else
+                {
+                    _logger.LogInformation("No selected themes found, using original query: {Query}", query);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load query themes, using original query");
+            }
+            return query;
+        }
+
         private FunctionTool CreateLocalTool(string name, string description, (string paramName, string paramType, string paramDesc, bool required)[] parameters)
         {
             var props = new Dictionary<string, PropertyDefinition>();
@@ -720,6 +775,29 @@ Always use this exact format when you need to perform an action."
                     }
                 }
             };
+        }
+
+        private async Task LogToolCallAsync(string toolName, string query, object arguments, object result, long? durationMs = null)
+        {
+            try
+            {
+                var toolCall = new AgentToolCall
+                {
+                    ToolName = toolName,
+                    Query = query,
+                    Arguments = JsonSerializer.Serialize(arguments),
+                    Result = JsonSerializer.Serialize(result),
+                    ExecutedAt = DateTime.UtcNow,
+                    DurationMs = durationMs
+                };
+
+                _context.ToolCalls.Add(toolCall);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to log tool call for {ToolName}", toolName);
+            }
         }
     }
 }

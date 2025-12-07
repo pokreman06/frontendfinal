@@ -58,6 +58,7 @@ interface Message {
   content: string;
   timestamp?: Date;
   toolCalls?: ToolCall[];
+  userQuery?: string; // The original user query that generated these tool calls
 }
 
 export default function ChatPage() {
@@ -162,6 +163,7 @@ export default function ChatPage() {
         content: data.response || data.message || "No response received",
         timestamp: new Date(),
         toolCalls: toolCalls,
+        userQuery: inputText, // Store the original user query
       };
 
       console.log("Assistant Message:", assistantMessage);
@@ -294,7 +296,7 @@ export default function ChatPage() {
                   
                   {msg.role === "assistant" && msg.toolCalls && msg.toolCalls.length > 0 && (
                     <>
-                      <ToolUsageDisplay toolCalls={msg.toolCalls} />
+                      <ToolUsageDisplay toolCalls={msg.toolCalls} query={msg.userQuery} />
                       <button
                         onClick={() => ready_to_post(msg.content, msg.toolCalls)}
                         className="mt-2 w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center justify-center space-x-2"

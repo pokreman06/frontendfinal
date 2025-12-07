@@ -94,6 +94,26 @@ function Layout() {
               >
                 AI Chat
               </Link>
+              <Link
+                to="/tool-calls"
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  isActive("/tool-calls")
+                    ? "bg-indigo-50 text-indigo-700 font-medium"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                Tool Calls
+              </Link>
+              <Link
+                to="/tool-settings"
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  isActive("/tool-settings")
+                    ? "bg-indigo-50 text-indigo-700 font-medium"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                Tool Settings
+              </Link>
             </div>
 
             {/* User Menu */}

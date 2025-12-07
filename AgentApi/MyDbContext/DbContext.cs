@@ -57,10 +57,35 @@ public class MyDbContext : DbContext
             entity.Property(e => e.Size).HasColumnName("size");
             entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at");
         });
+
+        // Tool calls table
+        modelBuilder.Entity<AgentToolCall>(entity =>
+        {
+            entity.ToTable("tool_calls");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ToolName).HasColumnName("tool_name");
+            entity.Property(e => e.Query).HasColumnName("query");
+            entity.Property(e => e.Arguments).HasColumnName("arguments");
+            entity.Property(e => e.Result).HasColumnName("result");
+            entity.Property(e => e.ExecutedAt).HasColumnName("executed_at");
+            entity.Property(e => e.DurationMs).HasColumnName("duration_ms");
+        });
+
+        // Tool settings table
+        modelBuilder.Entity<ToolSettings>(entity =>
+        {
+            entity.ToTable("tool_settings");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ToolName).HasColumnName("tool_name");
+            entity.Property(e => e.IsEnabled).HasColumnName("is_enabled");
+            entity.Property(e => e.Description).HasColumnName("description");
+        });
     }
     public DbSet<User> Users { get; set; }
     public DbSet<QueryTheme> QueryThemes { get; set; }
     public DbSet<SavedImage> SavedImages { get; set; }
+    public DbSet<AgentToolCall> ToolCalls { get; set; }
+    public DbSet<ToolSettings> ToolSettings { get; set; }
 }
 
 public class User
@@ -92,6 +117,7 @@ public class QueryTheme
 {
     public int Id { get; set; }
     public string Text { get; set; } = string.Empty;
+    public bool Selected { get; set; } = true;
 }
 
 public class SavedImage
@@ -103,4 +129,23 @@ public class SavedImage
     public byte[] Data { get; set; } = Array.Empty<byte>();
     public long Size { get; set; }
     public DateTime UploadedAt { get; set; }
+}
+
+public class AgentToolCall
+{
+    public int Id { get; set; }
+    public string ToolName { get; set; } = string.Empty;
+    public string Query { get; set; } = string.Empty;
+    public string Arguments { get; set; } = string.Empty; // JSON serialized
+    public string Result { get; set; } = string.Empty; // JSON serialized
+    public DateTime ExecutedAt { get; set; }
+    public long? DurationMs { get; set; }
+}
+
+public class ToolSettings
+{
+    public int Id { get; set; }
+    public string ToolName { get; set; } = string.Empty;
+    public bool IsEnabled { get; set; } = true;
+    public string Description { get; set; } = string.Empty;
 }

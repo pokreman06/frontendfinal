@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { loadQueryThemes, saveQueryThemes } from "../query/apiClient";
+import { loadQueryThemes, saveQueryThemes, saveQueryThemeSelection } from "../query/apiClient";
+import MultiSelectGrid from "../components/MultiSelectGrid";
 
 type Theme = {
   id: string;
   text: string;
+  selected: boolean;
 };
 
 function uid() {
@@ -21,7 +23,16 @@ export default function QueryThemesPage() {
       try {
         const loaded = await loadQueryThemes();
         if (!mounted) return;
-        setItems(loaded.map((t) => ({ id: uid(), text: t })));
+        // Try to restore selection state from localStorage
+        const selectionKey = "query_themes_selection";
+        const savedSelection = localStorage.getItem(selectionKey);
+        const selectedTexts = savedSelection ? JSON.parse(savedSelection) : [];
+        
+        setItems(loaded.map((t) => ({ 
+          id: uid(), 
+          text: t,
+          selected: selectedTexts.includes(t)
+        })));
       } catch (e) {
         console.error("Failed to load themes:", e);
       }
@@ -34,6 +45,11 @@ export default function QueryThemesPage() {
     (async () => {
       try {
         await saveQueryThemes(items.map((i) => i.text));
+        // Also save selection state to both localStorage and backend
+        const selectionKey = "query_themes_selection";
+        const selectedTexts = items.filter(i => i.selected).map(i => i.text);
+        localStorage.setItem(selectionKey, JSON.stringify(selectedTexts));
+        await saveQueryThemeSelection(selectedTexts);
       } catch (e) {
         console.error("Failed to save themes:", e);
       }
@@ -47,20 +63,21 @@ export default function QueryThemesPage() {
       setItems((s) => s.map((it) => (it.id === editingId ? { ...it, text: trimmed } : it)));
       setEditingId(null);
     } else {
-      setItems((s) => [{ id: uid(), text: trimmed }, ...s]);
+      setItems((s) => [{ id: uid(), text: trimmed, selected: true }, ...s]);
     }
     setInput("");
   }
 
-  function editItem(id: string) {
-    const it = items.find((x) => x.id === id);
-    if (!it) return;
-    setEditingId(id);
-    setInput(it.text);
+  function toggleSelection(id: string) {
+    setItems((s) => s.map((it) => (it.id === id ? { ...it, selected: !it.selected } : it)));
   }
 
-  function removeItem(id: string) {
-    setItems((s) => s.filter((x) => x.id !== id));
+  function selectAll() {
+    setItems((s) => s.map((it) => ({ ...it, selected: true })));
+  }
+
+  function deselectAll() {
+    setItems((s) => s.map((it) => ({ ...it, selected: false })));
   }
 
   function clearAll() {
@@ -99,37 +116,35 @@ export default function QueryThemesPage() {
         </div>
 
         <div className="mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-medium">Saved Themes ({items.length})</h2>
-            <div>
-              <button onClick={clearAll} className="text-sm text-red-600 hover:underline">Clear all</button>
-            </div>
-          </div>
-
-          {items.length === 0 ? (
-            <p className="text-gray-500">No themes yet. Add some above.</p>
-          ) : (
-            <ul className="space-y-2">
-              {items.map((it) => (
-                <li key={it.id} className="flex items-center justify-between border p-2 rounded-md">
-                  <div className="text-sm text-gray-800">{it.text}</div>
-                  <div className="space-x-2">
-                    <button onClick={() => editItem(it.id)} className="text-sm text-indigo-600 hover:underline">Edit</button>
-                    <button onClick={() => removeItem(it.id)} className="text-sm text-red-600 hover:underline">Delete</button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+          <MultiSelectGrid
+            items={items.map((t) => ({ id: t.id, label: t.text, selected: t.selected }))}
+            onToggle={(id) => toggleSelection(id as string)}
+            onSelectAll={selectAll}
+            onDeselectAll={deselectAll}
+            onClear={clearAll}
+            title="Saved Themes"
+            emptyMessage={<p className="text-gray-500">No themes yet. Add some above.</p>}
+            showLabel={true}
+          />
         </div>
       </div>
 
-      <div className="mt-6 text-sm text-gray-500">
-        <p>Notes:</p>
-        <ul className="list-disc ml-5">
-          <li>The themes are stored in your browser's localStorage.</li>
-          <li>Integrate with the backend using `apiClient` when ready (TODO).</li>
-        </ul>
+      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start space-x-2">
+          <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+          <div className="text-sm text-blue-900">
+            <p className="font-semibold mb-1">How Query Themes Work</p>
+            <ul className="list-disc ml-4 space-y-1">
+              <li><strong>Only selected themes</strong> are appended to web searches performed by the AI assistant</li>
+              <li>Click the checkbox to select/deselect themes for use in searches</li>
+              <li>This helps focus searches on topics relevant to your needs (e.g., privacy, security, AI policy)</li>
+              <li>Themes are stored in the database and synced across all your sessions</li>
+              <li>Changes take effect immediately for all new searches in the Chat page</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
