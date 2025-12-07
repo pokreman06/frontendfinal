@@ -1,0 +1,21 @@
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+WORKDIR /src
+
+# Copy solution and project files
+COPY *.sln .
+COPY AgentApi/ AgentApi/
+COPY Agent.test/ Agent.test/
+
+# Restore and build
+RUN dotnet restore
+RUN dotnet build -c Release --no-restore
+
+# Test stage
+FROM build AS test
+
+WORKDIR /src
+
+# Run tests with full output
+CMD ["dotnet", "test", "Agent.test/Agent.test.csproj", "-c", "Release", "--no-restore", "--logger:console;verbosity=detailed"]
