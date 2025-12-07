@@ -9,6 +9,10 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using AgentApi.Services.SearchValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+
+// Check if this is a migration-only run (for init containers)
+bool migrateOnly = args.Contains("--migrate-only");
+
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -57,30 +61,37 @@ builder.Services
 string connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
                           ?? builder.Configuration.GetConnectionString("DefaultConnection")!;
 
-builder.Services.AddHttpClient(); // Add HttpClientFactory for AuthController
-builder.Services.AddSingleton(new PromptSearcher(Environment.GetEnvironmentVariable("GOOGLE_API"), Environment.GetEnvironmentVariable("CUSTOM_SEARCH_ENGINE")));
-builder.Services.AddScoped<WebPageFetcher>();
-builder.Services.AddScoped<IToolCallExtractor, ToolCallExtractor>();
-builder.Services.AddScoped<IToolOrchestrator, ToolOrchestrator>();
 builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-builder.Services.AddHttpClient<ILocalAIService, LocalAIService>(client =>
-{
-    client.BaseAddress = new Uri("http://ai-snow.reindeer-pinecone.ts.net:9292/");
-    client.Timeout = TimeSpan.FromMinutes(5); // Longer timeout for local models
-});
-
-// Register MCP Client with factory pattern
+// Register MCP service URL (needed for logging even in migrate-only mode)
 var mcpServiceUrl = Environment.GetEnvironmentVariable("MCP_SERVICE_URL") ?? "http://mcp-service:8000";
-builder.Services.AddHttpClient<McpClient>(client =>
+
+// Only register these services if not in migrate-only mode
+if (!migrateOnly)
 {
-    client.BaseAddress = new Uri(mcpServiceUrl);
-    client.Timeout = TimeSpan.FromMinutes(2);
-    // Small runtime info so pod logs show what the resolved MCP URL is
-    Console.WriteLine($"MCP service URL resolved to: {mcpServiceUrl}");
-});
-builder.Services.AddScoped<IMcpClient>(provider => provider.GetRequiredService<McpClient>());
+    builder.Services.AddHttpClient(); // Add HttpClientFactory for AuthController
+    builder.Services.AddSingleton(new PromptSearcher(Environment.GetEnvironmentVariable("GOOGLE_API"), Environment.GetEnvironmentVariable("CUSTOM_SEARCH_ENGINE")));
+    builder.Services.AddScoped<WebPageFetcher>();
+    builder.Services.AddScoped<IToolCallExtractor, ToolCallExtractor>();
+    builder.Services.AddScoped<IToolOrchestrator, ToolOrchestrator>();
+
+    builder.Services.AddHttpClient<ILocalAIService, LocalAIService>(client =>
+    {
+        client.BaseAddress = new Uri("http://ai-snow.reindeer-pinecone.ts.net:9292/");
+        client.Timeout = TimeSpan.FromMinutes(5); // Longer timeout for local models
+    });
+
+    // Register MCP Client with factory pattern
+    builder.Services.AddHttpClient<McpClient>(client =>
+    {
+        client.BaseAddress = new Uri(mcpServiceUrl);
+        client.Timeout = TimeSpan.FromMinutes(2);
+        // Small runtime info so pod logs show what the resolved MCP URL is
+        Console.WriteLine($"MCP service URL resolved to: {mcpServiceUrl}");
+    });
+    builder.Services.AddScoped<IMcpClient>(provider => provider.GetRequiredService<McpClient>());
+}
 var app = builder.Build();
 
 // Log the resolved MCP service URL
@@ -172,6 +183,14 @@ while (retryCount < maxRetries)
 if (retryCount >= maxRetries && lastException != null)
 {
     Console.WriteLine($"Failed to connect to database after {maxRetries} attempts: {lastException.Message}");
+    Environment.Exit(1);
+}
+
+// If this is a migration-only run (for Kubernetes init container), exit here
+if (migrateOnly)
+{
+    Console.WriteLine("Migration-only mode: Migrations completed successfully. Exiting.");
+    return;
 }
 
 app.MapGet("/", () => "hello world");

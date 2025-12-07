@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrations
+  namespace: nate-agent
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: migrations
+          image: nhowell02/agentserver:${TAG}
+          imagePullPolicy: Always
+          command:
+            - /bin/sh
+            - -c
+            - "dotnet AgentApi.dll --migrate-only"
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nate-agent-secrets
+                  key: DATABASE_URL
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: DOTNET_RUNNING_IN_CONTAINER
+              value: "true"
+      restartPolicy: Never

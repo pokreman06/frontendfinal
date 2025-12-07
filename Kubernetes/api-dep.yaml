@@ -13,6 +13,26 @@ spec:
       labels:
         app: api-deployment
     spec:
+      initContainers:
+        - name: migrations
+          image: nhowell02/agentserver:${TAG}
+          imagePullPolicy: Always
+          command: 
+            - /bin/sh
+            - -c
+            - "dotnet AgentApi.dll --migrate-only"
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nate-agent-secrets
+                  key: DATABASE_URL
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: DOTNET_RUNNING_IN_CONTAINER
+              value: "true"
       containers:
         - name: api-deployment
           image: nhowell02/agentserver:${TAG}
