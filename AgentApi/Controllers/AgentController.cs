@@ -40,7 +40,7 @@ Available functions:
 Always use this exact format when you need to perform an action.";
 
         public AgentController(
-            ILocalAIService aiService, 
+            ILocalAIService aiService,
             ILogger<AgentController> logger,
             MyDbContext context,
             IToolOrchestrator toolOrchestrator)
@@ -58,10 +58,10 @@ Always use this exact format when you need to perform an action.";
             {
                 // Initialize and get all available tools
                 var (mcpTools, localTools, allTools) = await _toolOrchestrator.InitializeToolsAsync(request);
-                
+
                 // Build conversation history with system message
                 var messages = request.ConversationHistory ?? new List<Message>();
-                
+
                 // Add system message at the beginning if not already present
                 if (messages.Count == 0 || messages[0].Role != "system")
                 {
@@ -72,19 +72,19 @@ Always use this exact format when you need to perform an action.";
                     };
                     messages.Insert(0, systemMessage);
                 }
-                
+
                 if (string.IsNullOrEmpty(request.UserMessage))
                 {
                     return BadRequest("User message cannot be empty");
                 }
-                
+
                 // Check if user message already contains ACTION format - execute directly
                 var directActionResponse = await HandleDirectActionAsync(request.UserMessage, mcpTools, messages);
                 if (directActionResponse != null)
                 {
                     return directActionResponse;
                 }
-                
+
                 messages.Add(new Message
                 {
                     Role = "user",
@@ -93,13 +93,13 @@ Always use this exact format when you need to perform an action.";
 
                 // Delegate conversation loop to orchestrator
                 var response = await _toolOrchestrator.ProcessConversationLoopAsync(
-                    messages, 
-                    request, 
-                    allTools, 
+                    messages,
+                    request,
+                    allTools,
                     mcpTools);
 
-                return response != null 
-                    ? Ok(response) 
+                return response != null
+                    ? Ok(response)
                     : BadRequest("Max iterations reached - possible infinite tool loop");
             }
             catch (Exception ex)
@@ -131,7 +131,7 @@ Always use this exact format when you need to perform an action.";
             return Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
         }
 
-        
+
         private string EnhanceQueryWithThemes(string query)
         {
             try
@@ -165,17 +165,17 @@ Always use this exact format when you need to perform an action.";
             {
                 return null;
             }
-            
+
             _logger.LogInformation("Direct ACTION command detected in user message");
             var toolCalls = _toolOrchestrator.ExtractToolCalls(userMessage, mcpTools);
-            
+
             if (toolCalls.Count == 0)
             {
                 return null;
             }
-            
+
             var (directFunctionExecutions, toolResults) = await _toolOrchestrator.ExecuteToolCallsAsync(toolCalls);
-            
+
             return Ok(new AgentResponse
             {
                 Response = string.Join("\n", toolResults),

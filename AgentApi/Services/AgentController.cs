@@ -7,7 +7,7 @@ public class PromptSearcher(string key, string id)
     {
         return !string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(id);
     }
-    
+
     public async Task<List<string>> GetQuery(string query, string? fileType = null)
     {
         // Add file type filter if specified (e.g., pdf, doc, ppt, xls)
@@ -15,21 +15,22 @@ public class PromptSearcher(string key, string id)
         {
             query = $"{query} filetype:{fileType}";
         }
-        
+
         var customSearchService = new CustomSearchAPIService(new
-         BaseClientService.Initializer{
+         BaseClientService.Initializer
+        {
             ApiKey = key
-         });
-         var listRequest = customSearchService.Cse.List();
-         listRequest.Cx = id;
-         listRequest.Q = query;
-         var results = new List<string>();
-         var search = await listRequest.ExecuteAsync();
-         if (search.Items != null)
+        });
+        var listRequest = customSearchService.Cse.List();
+        listRequest.Cx = id;
+        listRequest.Q = query;
+        var results = new List<string>();
+        var search = await listRequest.ExecuteAsync();
+        if (search.Items != null)
+        {
+            foreach (var result in search.Items)
             {
-                foreach (var result in search.Items)
-            {
-             results.Add(result.Link);
+                results.Add(result.Link);
             }
         }
         return results;

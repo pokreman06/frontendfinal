@@ -17,7 +17,7 @@ namespace AgentApi.Services
         List<(string toolName, Dictionary<string, object> args)> ExtractToolCalls(
             string content,
             List<FunctionTool> availableTools);
-        
+
         bool IsParameterlessFunction(string functionName);
     }
 
@@ -207,7 +207,7 @@ namespace AgentApi.Services
                     }
                     catch (JsonException ex)
                     {
-                        _logger.LogDebug(ex, "Failed to parse JSON fragment: {Json}", 
+                        _logger.LogDebug(ex, "Failed to parse JSON fragment: {Json}",
                             match.Value.Substring(0, Math.Min(50, match.Value.Length)));
                     }
                 }

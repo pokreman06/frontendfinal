@@ -24,15 +24,15 @@ public class ToolCallsController : ControllerBase
         try
         {
             var query = _context.ToolCalls.AsQueryable();
-            
+
             // Filter by tool name if provided
             if (!string.IsNullOrEmpty(toolName))
             {
                 query = query.Where(t => t.ToolName.Contains(toolName));
             }
-            
+
             var total = await query.CountAsync();
-            
+
             var toolCalls = await query
                 .OrderByDescending(t => t.ExecutedAt)
                 .Skip((page - 1) * pageSize)

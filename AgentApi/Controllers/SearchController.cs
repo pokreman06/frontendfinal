@@ -23,6 +23,6 @@ public class SearchController(PromptSearcher searcher)
     [HttpGet("health")]
     public string Health()
     {
-        return "SearchController is healthy token:"+searcher.hasToken();
+        return "SearchController is healthy token:" + searcher.hasToken();
     }
 }

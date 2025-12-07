@@ -21,7 +21,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("LocalDev", policy =>
     {
         policy.WithOrigins(
-                "http://localhost:5173", 
+                "http://localhost:5173",
                 "http://127.0.0.1:5173",
                 "https://client.nagent.duckdns.org",
                 "http://client.nagent.duckdns.org"
@@ -33,7 +33,7 @@ builder.Services.AddCors(options =>
 });
 
 // Configure JWT authentication with Keycloak
-var keycloakAuthority = Environment.GetEnvironmentVariable("KEYCLOAK_AUTHORITY") 
+var keycloakAuthority = Environment.GetEnvironmentVariable("KEYCLOAK_AUTHORITY")
                         ?? "https://auth-dev.snowse.io/realms/DevRealm";
 var keycloakAudience = Environment.GetEnvironmentVariable("KEYCLOAK_AUDIENCE") ?? "nagent-api";
 
@@ -54,7 +54,7 @@ builder.Services
         };
     });
 
-string connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
+string connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
                           ?? builder.Configuration.GetConnectionString("DefaultConnection")!;
 
 builder.Services.AddHttpClient(); // Add HttpClientFactory for AuthController
@@ -120,24 +120,24 @@ while (retryCount < maxRetries)
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<MyDbContext>();
-            
+
             // Test connection
             db.Database.OpenConnection();
             db.Database.CloseConnection();
-            
+
             Console.WriteLine("Database connection successful!");
-            
+
             // Get list of applied and pending migrations
             var appliedMigrations = db.Database.GetAppliedMigrations().ToList();
             var pendingMigrations = db.Database.GetPendingMigrations().ToList();
-            
+
             // If migrations table doesn't exist, create it manually
             if (!appliedMigrations.Any() && pendingMigrations.Any())
             {
                 Console.WriteLine("Initializing migrations table...");
                 db.Database.ExecuteSql($"CREATE TABLE IF NOT EXISTS \"__EFMigrationsHistory\" (\"MigrationId\" character varying(150) NOT NULL, \"ProductVersion\" character varying(32) NOT NULL, CONSTRAINT \"PK___EFMigrationsHistory\" PRIMARY KEY (\"MigrationId\"))");
             }
-            
+
             // Apply pending migrations
             if (pendingMigrations.Any())
             {

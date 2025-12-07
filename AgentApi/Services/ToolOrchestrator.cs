@@ -67,7 +67,7 @@ namespace AgentApi.Services
                 try
                 {
                     var orchestratorResult = await ExecuteToolAsync(toolName, args);
-                    
+
                     executions.Add(new FunctionExecutionResult
                     {
                         FunctionName = orchestratorResult.FunctionName,
@@ -76,7 +76,7 @@ namespace AgentApi.Services
                         Result = orchestratorResult.Result,
                         ErrorMessage = orchestratorResult.ErrorMessage
                     });
-                    
+
                     if (orchestratorResult.Success)
                     {
                         results.Add($"Successfully executed {toolName}: {orchestratorResult.Result}");
@@ -477,30 +477,30 @@ namespace AgentApi.Services
         {
             // Get available MCP tools
             var mcpTools = await _mcpClient.GetAvailableToolsAsync();
-            
+
             // Add local tools (web_search and fetch_page)
             var localTools = new List<FunctionTool>
             {
                 CreateLocalTool("web_search", "Search the web using Google Custom Search API. Can filter by file type (pdf, doc, ppt, xls, etc).",
-                    new[] { 
+                    new[] {
                         ("query", "string", "The search query to execute", true),
                         ("file_type", "string", "Optional file type filter (e.g., pdf, doc, ppt, xls)", false)
                     }),
                 CreateLocalTool("fetch_page", "Fetch and parse the text content from a webpage URL",
-                    new[] { 
+                    new[] {
                         ("url", "string", "The URL of the webpage to fetch and parse", true)
                     })
             };
-            
+
             var allTools = new List<FunctionTool>();
             allTools.AddRange(localTools);
             allTools.AddRange(mcpTools);
-            
+
             // Filter tools: prioritize AllowedTools from request, then fall back to database settings
             if (request.AllowedTools != null && request.AllowedTools.Count > 0)
             {
                 allTools = allTools.Where(t => request.AllowedTools.Contains(t.Function.Name)).ToList();
-                _logger.LogInformation("Filtered to {Count} allowed tools (from request): {Tools}", 
+                _logger.LogInformation("Filtered to {Count} allowed tools (from request): {Tools}",
                     allTools.Count, string.Join(", ", allTools.Select(t => t.Function.Name)));
             }
             else
@@ -510,11 +510,11 @@ namespace AgentApi.Services
                     .Where(t => t.IsEnabled)
                     .Select(t => t.ToolName)
                     .ToListAsync();
-                
+
                 if (enabledToolNames.Count > 0)
                 {
                     allTools = allTools.Where(t => enabledToolNames.Contains(t.Function.Name)).ToList();
-                    _logger.LogInformation("Filtered to {Count} enabled tools (from database): {Tools}", 
+                    _logger.LogInformation("Filtered to {Count} enabled tools (from database): {Tools}",
                         allTools.Count, string.Join(", ", allTools.Select(t => t.Function.Name)));
                 }
                 else
@@ -523,8 +523,8 @@ namespace AgentApi.Services
                     _logger.LogInformation("No tool settings configured, using all {Count} available tools", allTools.Count);
                 }
             }
-            
-            _logger.LogInformation("Final tool set: {LocalCount} local + {McpCount} MCP = {Total} total", 
+
+            _logger.LogInformation("Final tool set: {LocalCount} local + {McpCount} MCP = {Total} total",
                 localTools.Count, mcpTools.Count, allTools.Count);
 
             return (mcpTools, localTools, allTools);

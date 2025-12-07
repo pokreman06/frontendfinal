@@ -119,15 +119,15 @@ namespace AgentApi.Controllers
                         {
                             ["q"] = new PropertyDefinition { Type = "string", Description = "URL-encoded search term (max 100 chars)" },
                             ["lang"] = new PropertyDefinition { Type = "string", Description = "Language code (e.g. en, es)" },
-                            ["image_type"] = new PropertyDefinition { Type = "string", Description = "Filter by image type: all, photo, illustration, vector", Enum = new List<string>{"all","photo","illustration","vector"} },
-                            ["orientation"] = new PropertyDefinition { Type = "string", Description = "Orientation: all, horizontal, vertical", Enum = new List<string>{"all","horizontal","vertical"} },
+                            ["image_type"] = new PropertyDefinition { Type = "string", Description = "Filter by image type: all, photo, illustration, vector", Enum = new List<string> { "all", "photo", "illustration", "vector" } },
+                            ["orientation"] = new PropertyDefinition { Type = "string", Description = "Orientation: all, horizontal, vertical", Enum = new List<string> { "all", "horizontal", "vertical" } },
                             ["category"] = new PropertyDefinition { Type = "string", Description = "Category filter, e.g. nature, people" },
                             ["min_width"] = new PropertyDefinition { Type = "integer", Description = "Minimum image width" },
                             ["min_height"] = new PropertyDefinition { Type = "integer", Description = "Minimum image height" },
                             ["colors"] = new PropertyDefinition { Type = "string", Description = "Comma-separated colors: red,blue,green,..." },
                             ["editors_choice"] = new PropertyDefinition { Type = "boolean", Description = "Only editor's choice images" },
                             ["safesearch"] = new PropertyDefinition { Type = "boolean", Description = "Only safe-for-work images" },
-                            ["order"] = new PropertyDefinition { Type = "string", Description = "Order results by popular or latest", Enum = new List<string>{"popular","latest"} },
+                            ["order"] = new PropertyDefinition { Type = "string", Description = "Order results by popular or latest", Enum = new List<string> { "popular", "latest" } },
                             ["page"] = new PropertyDefinition { Type = "integer", Description = "Page number" },
                             ["per_page"] = new PropertyDefinition { Type = "integer", Description = "Results per page (3-200)" }
                         },
@@ -145,7 +145,7 @@ namespace AgentApi.Controllers
             try
             {
                 var userEmail = GetUserEmail();
-                
+
                 if (file == null || file.Length == 0)
                 {
                     return BadRequest(new { error = "No file provided" });
@@ -227,11 +227,11 @@ namespace AgentApi.Controllers
                 _logger.LogInformation("GetSavedImages called");
                 var userEmail = GetUserEmail();
                 _logger.LogInformation("GetSavedImages - authenticated as: {Email}", userEmail);
-                
+
                 // Provide both browser-accessible URL and Docker-network URL
                 var browserBaseUrl = $"{Request.Scheme}://{Request.Host}";
                 var dockerBaseUrl = "http://web:8080";
-                
+
                 var images = _context.SavedImages
                     .Where(i => i.UserEmail == userEmail)
                     .OrderByDescending(i => i.UploadedAt)
@@ -269,7 +269,7 @@ namespace AgentApi.Controllers
             try
             {
                 var image = _context.SavedImages.Find(id);
-                
+
                 if (image == null)
                 {
                     return NotFound();
@@ -294,7 +294,7 @@ namespace AgentApi.Controllers
             {
                 var userEmail = GetUserEmail();
                 var image = _context.SavedImages.Find(id);
-                
+
                 if (image == null)
                 {
                     return NotFound(new { error = "Image not found" });
@@ -308,7 +308,7 @@ namespace AgentApi.Controllers
 
                 _context.SavedImages.Remove(image);
                 _context.SaveChanges();
-                
+
                 _logger.LogInformation("Image deleted from database: {Id} by user {Email}", id, userEmail);
 
                 return Ok(new { message = "Image deleted successfully" });

@@ -72,7 +72,7 @@ public class ToolSettingsController : ControllerBase
             // Check if tool already exists
             var existing = await _context.ToolSettings
                 .FirstOrDefaultAsync(t => t.ToolName == dto.ToolName);
-            
+
             if (existing != null)
             {
                 return BadRequest(new { error = "Tool setting already exists" });
@@ -173,7 +173,7 @@ public class ToolSettingsController : ControllerBase
         try
         {
             var tools = await _context.ToolSettings.ToListAsync();
-            
+
             foreach (var tool in tools)
             {
                 var update = dto.Tools.FirstOrDefault(t => t.ToolName == tool.ToolName);

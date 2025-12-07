@@ -16,7 +16,7 @@ namespace AgentApi.Controllers
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
-            _keycloakAuthority = Environment.GetEnvironmentVariable("KEYCLOAK_AUTHORITY") 
+            _keycloakAuthority = Environment.GetEnvironmentVariable("KEYCLOAK_AUTHORITY")
                                 ?? "https://auth-dev.snowse.io/realms/DevRealm";
         }
 
@@ -28,16 +28,16 @@ namespace AgentApi.Controllers
             {
                 // Read form data manually since [FromForm] doesn't work reliably with OIDC clients
                 var form = await Request.ReadFormAsync();
-                
+
                 var grantType = form["grant_type"].ToString();
                 var clientId = form["client_id"].ToString();
                 var code = form["code"].ToString();
                 var redirectUri = form["redirect_uri"].ToString();
                 var refreshToken = form["refresh_token"].ToString();
                 var codeVerifier = form["code_verifier"].ToString();
-                
+
                 _logger.LogInformation($"Token exchange request - ClientId: {clientId}, GrantType: {grantType}, HasCode: {!string.IsNullOrEmpty(code)}, HasCodeVerifier: {!string.IsNullOrEmpty(codeVerifier)}");
-                
+
                 var httpClient = _httpClientFactory.CreateClient();
                 var tokenEndpoint = $"{_keycloakAuthority}/protocol/openid-connect/token";
 
@@ -62,11 +62,11 @@ namespace AgentApi.Controllers
                 {
                     formData["code_verifier"] = codeVerifier;
                 }
-                
+
                 _logger.LogInformation($"Sending token request to Keycloak with {formData.Count} parameters");
 
                 var content = new FormUrlEncodedContent(formData);
-                
+
                 _logger.LogInformation($"Calling Keycloak token endpoint: {tokenEndpoint}");
                 var response = await httpClient.PostAsync(tokenEndpoint, content);
                 var responseContent = await response.Content.ReadAsStringAsync();

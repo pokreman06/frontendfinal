@@ -28,7 +28,7 @@ namespace AgentApi.Controllers
             {
                 var client = _httpClientFactory.CreateClient();
                 var response = await client.GetAsync($"{_mcpServiceUrl}/api/stats");
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
@@ -53,7 +53,7 @@ namespace AgentApi.Controllers
             {
                 var client = _httpClientFactory.CreateClient();
                 var response = await client.GetAsync($"{_mcpServiceUrl}/api/posts");
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
@@ -78,7 +78,7 @@ namespace AgentApi.Controllers
             {
                 var client = _httpClientFactory.CreateClient();
                 var response = await client.GetAsync($"{_mcpServiceUrl}/api/posts/{postId}/insights");
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();

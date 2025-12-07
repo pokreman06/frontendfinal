@@ -43,10 +43,10 @@ namespace AgentApi.Services
             // For HTTP-based service, we return a hardcoded list of available tools
             var tools = new List<FunctionTool>
             {
-                CreateTool("post_to_facebook", "Create a new Facebook Page post with a text message", 
+                CreateTool("post_to_facebook", "Create a new Facebook Page post with a text message",
                     new[] { ("message", "string") }),
                 CreateTool("get_page_posts", "Fetch the most recent posts on the Page", Array.Empty<(string, string)>()),
-                CreateTool("get_post_comments", "Retrieve all comments for a given post", 
+                CreateTool("get_post_comments", "Retrieve all comments for a given post",
                     new[] { ("post_id", "string") }),
                 CreateTool("reply_to_comment", "Reply to a specific comment on a Facebook post",
                     new[] { ("post_id", "string"), ("comment_id", "string"), ("message", "string") }),
@@ -76,11 +76,11 @@ namespace AgentApi.Services
             {
                 // Build the URL with query parameters
                 var url = $"{_baseUrl}/api/{ConvertToolNameToEndpoint(toolName)}";
-                
+
                 // Add query parameters
-                var queryParams = string.Join("&", 
+                var queryParams = string.Join("&",
                     parameters.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value?.ToString() ?? "")}"));
-                
+
                 if (!string.IsNullOrEmpty(queryParams))
                     url += $"?{queryParams}";
 
@@ -94,7 +94,7 @@ namespace AgentApi.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogError("Tool execution failed: {StatusCode} - {Error}", 
+                    _logger.LogError("Tool execution failed: {StatusCode} - {Error}",
                         response.StatusCode, errorContent);
                     return $"Error: {response.StatusCode} - {errorContent}";
                 }

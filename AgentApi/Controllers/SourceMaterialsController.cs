@@ -24,7 +24,7 @@ namespace AgentApi.Controllers
             // Log all claims for debugging
             var claims = User.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
             _logger.LogInformation("Available claims: {Claims}", string.Join(", ", claims));
-            
+
             // ASP.NET Core maps JWT "email" claim to this long claim type
             var email = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
             if (string.IsNullOrEmpty(email))
@@ -40,14 +40,14 @@ namespace AgentApi.Controllers
             {
                 email = User.FindFirst("sub")?.Value;
             }
-            
+
             if (string.IsNullOrEmpty(email))
             {
-                _logger.LogError("No email claim found. User.Identity.IsAuthenticated: {IsAuthenticated}, User.Identity.Name: {Name}", 
+                _logger.LogError("No email claim found. User.Identity.IsAuthenticated: {IsAuthenticated}, User.Identity.Name: {Name}",
                     User.Identity?.IsAuthenticated, User.Identity?.Name);
                 throw new InvalidOperationException("User email not found in claims");
             }
-            
+
             _logger.LogInformation("Extracted user email: {Email}", email);
             return email;
         }
@@ -59,7 +59,7 @@ namespace AgentApi.Controllers
             {
                 _logger.LogInformation("GetMaterialsByEmail called with email: {Email}", email);
                 var userEmail = GetUserEmail();
-                
+
                 // Users can only retrieve their own materials
                 if (!userEmail.Equals(email, StringComparison.OrdinalIgnoreCase))
                 {
@@ -93,8 +93,8 @@ namespace AgentApi.Controllers
             try
             {
                 var userEmail = GetUserEmail();
-                
-                if (string.IsNullOrWhiteSpace(request.Url) || 
+
+                if (string.IsNullOrWhiteSpace(request.Url) ||
                     string.IsNullOrWhiteSpace(request.Title))
                 {
                     return BadRequest("URL and Title are required");
@@ -135,7 +135,7 @@ namespace AgentApi.Controllers
             {
                 var userEmail = GetUserEmail();
                 var material = await _context.SourceMaterials.FindAsync(id);
-                
+
                 if (material == null)
                 {
                     return NotFound("Source material not found");
@@ -180,7 +180,7 @@ namespace AgentApi.Controllers
             {
                 var userEmail = GetUserEmail();
                 var material = await _context.SourceMaterials.FindAsync(id);
-                
+
                 if (material == null)
                 {
                     return NotFound("Source material not found");

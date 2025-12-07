@@ -26,7 +26,7 @@ public class WebPageFetcher
             response.EnsureSuccessStatusCode();
 
             var html = await response.Content.ReadAsStringAsync();
-            
+
             // Parse HTML and extract text content
             var doc = new HtmlDocument();
             doc.LoadHtml(html);
@@ -39,7 +39,7 @@ public class WebPageFetcher
 
             // Get text content
             var textContent = doc.DocumentNode.InnerText;
-            
+
             // Clean up whitespace
             var lines = textContent
                 .Split('\n')

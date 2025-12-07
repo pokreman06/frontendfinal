@@ -17,16 +17,16 @@ public class MyDbContext : DbContext
             entity.Property(e => e.Username).HasColumnName("username");
             entity.Property(e => e.Email).HasColumnName("email");
         });
-                modelBuilder.Entity<Post>(entity =>
-        {
-            entity.ToTable("posts");
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+        modelBuilder.Entity<Post>(entity =>
+{
+    entity.ToTable("posts");
+    entity.Property(e => e.Id).HasColumnName("id");
+    entity.Property(e => e.UserId).HasColumnName("user_id");
 
-            entity.HasMany(p => p.ImagePreferences)
-                  .WithOne(ip => ip.Post)
-                  .HasForeignKey(ip => ip.PostId);
-        });
+    entity.HasMany(p => p.ImagePreferences)
+          .WithOne(ip => ip.Post)
+          .HasForeignKey(ip => ip.PostId);
+});
 
         // ImagePreferences table
         modelBuilder.Entity<ImagePreference>(entity =>
@@ -114,7 +114,7 @@ public class Post
     public int Id { get; set; }
     public int UserId { get; set; }
     public User User { get; set; } = null!;
-    
+
     public ICollection<ImagePreference> ImagePreferences { get; set; } = new List<ImagePreference>();
 }
 
@@ -123,7 +123,7 @@ public class ImagePreference
     public int Id { get; set; }
     public int PostId { get; set; }
     public Post Post { get; set; } = null!;
-    
+
     public string Preference { get; set; } = string.Empty;
 }
 

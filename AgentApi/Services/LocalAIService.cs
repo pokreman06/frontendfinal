@@ -22,19 +22,19 @@ namespace AgentApi.Services
         {
             try
             {
-                _logger.LogInformation("Sending request to local AI with {MessageCount} messages", 
+                _logger.LogInformation("Sending request to local AI with {MessageCount} messages",
                     request.Messages.Count);
 
                 var response = await _httpClient.PostAsJsonAsync("v1/chat/completions", request);
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogError("AI API error: {StatusCode} - {Error}", 
+                    _logger.LogError("AI API error: {StatusCode} - {Error}",
                         response.StatusCode, errorContent);
                     throw new Exception($"AI API returned {response.StatusCode}: {errorContent}");
                 }
-                
+
                 var result = await response.Content.ReadFromJsonAsync<LocalAIResponse>();
                 return result ?? throw new Exception("Failed to deserialize AI response");
             }
