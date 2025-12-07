@@ -1,6 +1,8 @@
 using Google.Apis.CustomSearchAPI.v1;
 using Google.Apis.Services;
+
 namespace AgentApi.Services.SearchValidation;
+
 public class PromptSearcher(string key, string id)
 {
     public bool hasToken()
