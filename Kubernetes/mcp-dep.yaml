@@ -22,6 +22,8 @@ spec:
           env:
             - name: PYTHONUNBUFFERED
               value: "1"
+            - name: IMAGE_SERVICE_URL
+              value: "http://api-service:8080"
             # Facebook API credentials from secret
             - name: FACEBOOK_PAGE_ID
               valueFrom:
