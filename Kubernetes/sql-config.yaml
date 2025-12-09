@@ -5,26 +5,73 @@ metadata:
   namespace: nate-agent
 data:
   init.sql: |
-    -- Users table (existing)
+    -- Migration: 20251207004209_AddSelectedToQueryTheme
+    CREATE TABLE IF NOT EXISTS query_themes (
+      id SERIAL PRIMARY KEY,
+      text TEXT NOT NULL,
+      selected BOOLEAN NOT NULL,
+      "UserEmail" TEXT NOT NULL DEFAULT ''
+    );
+
+    CREATE TABLE IF NOT EXISTS saved_images (
+      id SERIAL PRIMARY KEY,
+      file_name TEXT NOT NULL,
+      original_name TEXT NOT NULL,
+      content_type TEXT NOT NULL,
+      data BYTEA NOT NULL,
+      size BIGINT NOT NULL,
+      uploaded_at TIMESTAMP WITH TIME ZONE NOT NULL,
+      "UserEmail" TEXT NOT NULL DEFAULT ''
+    );
+
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       username TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE
     );
 
-    INSERT INTO users (username, email) 
-    VALUES ('nate', 'nate@example.com')
-    ON CONFLICT DO NOTHING;
-
-    -- Minimal Posts table
     CREATE TABLE IF NOT EXISTS posts (
       id SERIAL PRIMARY KEY,
       user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE
     );
 
-    -- Image preferences table (just stores a string) per post
     CREATE TABLE IF NOT EXISTS image_preferences (
       id SERIAL PRIMARY KEY,
       post_id INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
       preference TEXT NOT NULL
     );
+
+    -- Migration: 20251207010835_AddToolCallsTable
+    CREATE TABLE IF NOT EXISTS tool_calls (
+      id SERIAL PRIMARY KEY,
+      tool_name TEXT NOT NULL,
+      query TEXT NOT NULL,
+      arguments TEXT NOT NULL,
+      result TEXT NOT NULL,
+      executed_at TIMESTAMP WITH TIME ZONE NOT NULL,
+      duration_ms BIGINT
+    );
+
+    -- Migration: 20251207050459_AddSourceMaterials
+    CREATE TABLE IF NOT EXISTS source_materials (
+      id SERIAL PRIMARY KEY,
+      email TEXT NOT NULL,
+      url TEXT NOT NULL,
+      title TEXT NOT NULL,
+      content_type TEXT NOT NULL,
+      description TEXT NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL
+    );
+
+    -- Migration: 20251207013000_AddToolSettingsTable (with unique constraint)
+    CREATE TABLE IF NOT EXISTS tool_settings (
+      id SERIAL PRIMARY KEY,
+      tool_name TEXT NOT NULL UNIQUE,
+      is_enabled BOOLEAN NOT NULL DEFAULT true,
+      description TEXT NOT NULL DEFAULT ''
+    );
+
+    -- Insert sample data
+    INSERT INTO users (username, email) 
+    VALUES ('nate', 'nate@example.com')
+    ON CONFLICT DO NOTHING;

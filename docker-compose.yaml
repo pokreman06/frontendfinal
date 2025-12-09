@@ -14,6 +14,7 @@ services:
       CUSTOM_SEARCH_ENGINE: f642808a9e0124077
       PIXABAY_API_KEY: ${PIXABAY_API_KEY}
       MCP_SERVICE_URL: "http://facebook-mcp-service:8000"
+      IMAGE_SERVICE_URL: "http://web:8080"
     ports:
       - "8000:8080"
   

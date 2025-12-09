@@ -21,6 +21,7 @@ namespace AgentApi.Services
         Task<ToolExecutionResult> ExecuteToolAsync(string toolName, Dictionary<string, object> args);
         Task<(List<FunctionExecutionResult> executions, List<string> results)> ExecuteToolCallsAsync(List<(string toolName, Dictionary<string, object> args)> toolCalls);
         List<(string toolName, Dictionary<string, object> args)> ExtractToolCalls(string content, List<FunctionTool> availableTools);
+        string? ExtractMessageAfterAction(string content);
         bool IsParameterlessFunction(string functionName);
         Task<(List<FunctionTool> mcpTools, List<FunctionTool> localTools, List<FunctionTool> allTools)> InitializeToolsAsync(AgentRequest request);
         Task<AgentResponse?> ProcessConversationLoopAsync(List<Message> messages, AgentRequest request, List<FunctionTool> allTools, List<FunctionTool> mcpTools);
@@ -165,6 +166,14 @@ namespace AgentApi.Services
         }
 
         /// <summary>
+        /// Extracts MESSAGE instructions that appear after ACTION blocks.
+        /// </summary>
+        public string? ExtractMessageAfterAction(string content)
+        {
+            return _toolCallExtractor.ExtractMessageAfterAction(content);
+        }
+
+        /// <summary>
         /// Checks if a function doesn't require parameters.
         /// </summary>
         public bool IsParameterlessFunction(string functionName)
@@ -267,9 +276,14 @@ namespace AgentApi.Services
                     _logger.LogInformation("AI returned ACTION format in content");
 
                     var toolCalls = ExtractToolCalls(assistantMessage.Content ?? "", allTools);
+                    var messageAfterAction = _toolCallExtractor.ExtractMessageAfterAction(assistantMessage.Content ?? "");
+                    
+                    _logger.LogInformation("ExtractMessageAfterAction returned: {Message}", messageAfterAction ?? "NULL");
 
                     if (toolCalls.Count > 0)
                     {
+                        var toolResults = new List<string>();
+
                         foreach (var (toolName, args) in toolCalls)
                         {
                             toolsUsed.Add(toolName);
@@ -287,9 +301,11 @@ namespace AgentApi.Services
                                     ErrorMessage = orchestratorResult.ErrorMessage
                                 });
 
-                                assistantMessage.Content = orchestratorResult.Success
+                                var resultMessage = orchestratorResult.Success
                                     ? $"Tool {toolName} executed. Result: {orchestratorResult.Result}"
                                     : $"Error executing tool {toolName}: {orchestratorResult.ErrorMessage}";
+                                toolResults.Add(resultMessage);
+                                _logger.LogInformation("Tool {ToolName} executed successfully", toolName);
                             }
                             catch (Exception ex)
                             {
@@ -302,8 +318,41 @@ namespace AgentApi.Services
                                     Result = $"{{\"error\": \"{ex.Message}\"}}"
                                 });
                                 _logger.LogError(ex, "Error executing tool {ToolName}", toolName);
-                                assistantMessage.Content = $"Error executing tool {toolName}: {ex.Message}";
+                                toolResults.Add($"Error executing tool {toolName}: {ex.Message}");
                             }
+                        }
+
+                        // Store the original assistant message content for logging
+                        var originalContent = assistantMessage.Content;
+
+                        // If there's a MESSAGE after the ACTION, loop it back to the AI for processing with the tool results
+                        if (!string.IsNullOrEmpty(messageAfterAction))
+                        {
+                            _logger.LogInformation("Found MESSAGE after ACTION, looping back to AI with tool results: {Message}", messageAfterAction);
+                            
+                            // Combine tool results with the message so the AI has context
+                            var enrichedMessage = $"Tool Results:\n{string.Join("\n", toolResults)}\n\n{messageAfterAction}";
+                            
+                            // Add original assistant message to history (with original ACTION content)
+                            messages.Add(assistantMessage);
+                            
+                            // Add enriched message as user follow-up
+                            var userFollowUp = new Message
+                            {
+                                Role = "user",
+                                Content = enrichedMessage
+                            };
+                            messages.Add(userFollowUp);
+
+                            // Continue the loop to have the AI process the message with tool results
+                            continue;
+                        }
+                        else
+                        {
+                            // No MESSAGE found, add assistant message with tool results and continue
+                            assistantMessage.Content = string.Join("\n", toolResults);
+                            messages.Add(assistantMessage);
+                            continue;
                         }
                     }
 
@@ -592,10 +641,17 @@ namespace AgentApi.Services
                 return JsonSerializer.Serialize(new { error = "Missing url parameter" });
             }
 
-            var pageContent = await _pageFetcher.FetchPageContent(url);
-            _logger.LogInformation("Page fetched from: {Url}", url);
-
-            return JsonSerializer.Serialize(new { url = url, content = pageContent });
+            try
+            {
+                var pageContent = await _pageFetcher.FetchPageContent(url);
+                _logger.LogInformation("Page fetched from: {Url}", url);
+                return JsonSerializer.Serialize(new { url = url, content = pageContent });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching page from {Url}", url);
+                return JsonSerializer.Serialize(new { error = $"Failed to fetch page: {ex.Message}" });
+            }
         }
     }
 

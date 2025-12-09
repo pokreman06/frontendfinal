@@ -176,6 +176,50 @@ Always use this exact format when you need to perform an action.";
 
             var (directFunctionExecutions, toolResults) = await _toolOrchestrator.ExecuteToolCallsAsync(toolCalls);
 
+            // Check if there's a MESSAGE after the ACTION that should be looped back to AI
+            var messageAfterAction = _toolOrchestrator.ExtractMessageAfterAction(userMessage);
+            
+            if (!string.IsNullOrEmpty(messageAfterAction))
+            {
+                // If there's a MESSAGE, we need to feed it to the AI with the tool results
+                _logger.LogInformation("Found MESSAGE after ACTION in direct command, looping back to AI for processing");
+                
+                // Add the original user message to history
+                messages.Add(new Message { Role = "user", Content = userMessage });
+                
+                // Add assistant message with tool results
+                messages.Add(new Message { Role = "assistant", Content = string.Join("\n", toolResults) });
+                
+                // Create enriched message combining tool results with the MESSAGE instructions
+                var enrichedMessage = $"Tool Results:\n{string.Join("\n", toolResults)}\n\n{messageAfterAction}";
+                messages.Add(new Message { Role = "user", Content = enrichedMessage });
+                
+                // Now process through the normal conversation loop with the AI to handle the MESSAGE
+                var allTools = mcpTools; // Use available tools
+                var response = await _toolOrchestrator.ProcessConversationLoopAsync(messages, new AgentRequest 
+                { 
+                    UserMessage = enrichedMessage,
+                    Model = "gpt-oss-120b",
+                    ConversationHistory = messages,
+                    AllowedTools = mcpTools.Select(t => t.Function.Name).ToList()
+                }, allTools, mcpTools);
+                
+                if (response != null)
+                {
+                    // Combine the initial fetch_page execution with any additional executions from the AI processing
+                    var combinedExecutions = new List<FunctionExecutionResult>(directFunctionExecutions);
+                    if (response.FunctionExecutions != null && response.FunctionExecutions.Count > 0)
+                    {
+                        combinedExecutions.AddRange(response.FunctionExecutions);
+                    }
+                    
+                    response.FunctionExecutions = combinedExecutions;
+                    _logger.LogInformation("Returning response with {Count} total function executions", combinedExecutions.Count);
+                    return Ok(response);
+                }
+            }
+
+            // No MESSAGE or MESSAGE processing failed, return direct tool results
             return Ok(new AgentResponse
             {
                 Response = string.Join("\n", toolResults),

@@ -74,3 +74,5 @@ spec:
                   key: KEYCLOAK_AUDIENCE
             - name: MCP_SERVICE_URL
               value: "http://mcp-service:8000"
+            - name: IMAGE_SERVICE_URL
+              value: "http://api-service:8080"

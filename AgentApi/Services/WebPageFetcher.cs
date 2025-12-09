@@ -59,7 +59,7 @@ public class WebPageFetcher
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching page content from {Url}", url);
-            return $"Error fetching page: {ex.Message}";
+            throw; // Throw exception instead of returning error message
         }
     }
 }

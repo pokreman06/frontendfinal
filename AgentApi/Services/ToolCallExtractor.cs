@@ -19,6 +19,8 @@ namespace AgentApi.Services
             List<FunctionTool> availableTools);
 
         bool IsParameterlessFunction(string functionName);
+        
+        string? ExtractMessageAfterAction(string content);
     }
 
     public class ToolCallExtractor : IToolCallExtractor
@@ -255,6 +257,116 @@ namespace AgentApi.Services
             }
 
             return args;
+        }
+
+        /// <summary>
+        /// Extracts MESSAGE content that appears after ACTION blocks.
+        /// Looks for MESSAGE: prefix after EXPLANATION: line to extract instructions for the AI.
+        /// Supports both MESSAGE: prefix format on same line as EXPLANATION and on following lines.
+        /// </summary>
+        public string? ExtractMessageAfterAction(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                _logger.LogDebug("ExtractMessageAfterAction: content is null or whitespace");
+                return null;
+            }
+
+            try
+            {
+                _logger.LogDebug("ExtractMessageAfterAction: Processing content length: {Length}", content.Length);
+                
+                var lines = content.Split(new[] { "\n", "\r\n" }, StringSplitOptions.None);
+                _logger.LogDebug("ExtractMessageAfterAction: Found {LineCount} lines", lines.Length);
+                
+                var messageLines = new List<string>();
+                bool inActionBlock = false;
+                bool foundMessage = false;
+
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    var trimmed = lines[i].Trim();
+                    _logger.LogDebug("ExtractMessageAfterAction: Line {Index}: {Line}", i, trimmed.Substring(0, Math.Min(80, trimmed.Length)));
+
+                    // Start tracking when we find ACTION:
+                    if (trimmed.StartsWith("ACTION:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.LogDebug("ExtractMessageAfterAction: Found ACTION at line {Index}", i);
+                        inActionBlock = true;
+                        continue;
+                    }
+
+                    // When in ACTION block and we find EXPLANATION:
+                    if (inActionBlock && trimmed.StartsWith("EXPLANATION:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.LogDebug("ExtractMessageAfterAction: Found EXPLANATION at line {Index}", i);
+                        // Check if MESSAGE is on the same line as EXPLANATION
+                        var explanationContent = trimmed.Substring("EXPLANATION:".Length).Trim();
+                        _logger.LogDebug("ExtractMessageAfterAction: EXPLANATION content: {Content}", explanationContent.Substring(0, Math.Min(100, explanationContent.Length)));
+                        
+                        if (explanationContent.StartsWith("MESSAGE:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // MESSAGE is on same line as EXPLANATION
+                            var msgContent = explanationContent.Substring("MESSAGE:".Length).Trim();
+                            if (!string.IsNullOrEmpty(msgContent))
+                            {
+                                _logger.LogInformation("Extracted MESSAGE from same line as EXPLANATION: {Message}", msgContent.Substring(0, Math.Min(100, msgContent.Length)));
+                                return msgContent;
+                            }
+                        }
+                        else
+                        {
+                            // EXPLANATION is just the explanation, look for MESSAGE on next line
+                            _logger.LogDebug("ExtractMessageAfterAction: MESSAGE not on EXPLANATION line, checking next line");
+                            inActionBlock = false;
+                            // Check next line for MESSAGE:
+                            if (i + 1 < lines.Length)
+                            {
+                                var nextLine = lines[i + 1].Trim();
+                                if (nextLine.StartsWith("MESSAGE:", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var msgContent = nextLine.Substring("MESSAGE:".Length).Trim();
+                                    if (!string.IsNullOrEmpty(msgContent))
+                                    {
+                                        _logger.LogDebug("Extracted MESSAGE from next line: {Message}", msgContent.Substring(0, Math.Min(100, msgContent.Length)));
+                                        return msgContent;
+                                    }
+                                }
+                            }
+                        }
+                        continue;
+                    }
+
+                    // After ACTION block, collect remaining non-empty lines (fallback for loose text)
+                    if (!inActionBlock && foundMessage && !trimmed.StartsWith("ACTION:", StringComparison.OrdinalIgnoreCase) &&
+                         !trimmed.StartsWith("PARAMETERS:", StringComparison.OrdinalIgnoreCase) &&
+                         !trimmed.StartsWith("EXPLANATION:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!string.IsNullOrEmpty(trimmed))
+                        {
+                            messageLines.Add(trimmed);
+                        }
+                    }
+                }
+
+                // Fallback: if we collected message lines, join and return
+                if (messageLines.Count > 0)
+                {
+                    var message = string.Join(" ", messageLines).Trim();
+                    if (!string.IsNullOrEmpty(message))
+                    {
+                        _logger.LogDebug("Extracted message from lines after ACTION: {Message}", message.Substring(0, Math.Min(100, message.Length)));
+                        return message;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to extract message after ACTION");
+                return null;
+            }
         }
     }
 }

@@ -14,6 +14,7 @@ namespace AgentApi.Services
         private readonly ILogger<McpClient> _logger;
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
+        private readonly string _imageServiceUrl;
 
         public McpClient(ILogger<McpClient> logger, HttpClient httpClient, string? baseUrl = null)
         {
@@ -21,7 +22,9 @@ namespace AgentApi.Services
             _httpClient = httpClient;
             // prefer provided baseUrl, otherwise use in-cluster service name
             _baseUrl = baseUrl ?? Environment.GetEnvironmentVariable("MCP_SERVICE_URL") ?? "http://mcp-service:8000";
+            _imageServiceUrl = Environment.GetEnvironmentVariable("IMAGE_SERVICE_URL") ?? "http://api-service:8080";
             _logger.LogInformation("MCP client initialized to connect to {BaseUrl}", _baseUrl);
+            _logger.LogInformation("Image service URL set to {ImageServiceUrl}", _imageServiceUrl);
         }
 
         public async Task<bool> HealthCheckAsync()
@@ -76,6 +79,15 @@ namespace AgentApi.Services
             {
                 // Build the URL with query parameters
                 var url = $"{_baseUrl}/api/{ConvertToolNameToEndpoint(toolName)}";
+
+                // For image-related tools, add the image service URL as a parameter so MCP can access it
+                if (toolName == "post_image_to_facebook" && !string.IsNullOrEmpty(_imageServiceUrl))
+                {
+                    parameters = new Dictionary<string, object>(parameters)
+                    {
+                        { "api_service_url", _imageServiceUrl }
+                    };
+                }
 
                 // Add query parameters
                 var queryParams = string.Join("&",

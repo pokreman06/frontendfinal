@@ -157,50 +157,13 @@ export default function FacebookPostPage() {
 
     let userMessage = `Based on this text: "${inputText}", recommend a good Facebook post message. Just provide the recommended message text, nothing else.`;
     
-    // If a source material is selected, fetch it via the API and include content in the prompt
+    // If a source material is selected, ask the agent to fetch and use it
     if (selectedSourceMaterial) {
-      try {
-        const apiUrl = resolveApiUrl();
-        const token = getAuthToken();
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-        
-        // Fetch the page content through the AI agent
-        const fetchPayload = {
-          userMessage: `ACTION: fetch_page
+      userMessage = `ACTION: fetch_page
 PARAMETERS:
-url=${selectedSourceMaterial.url}`,
-          model: "gpt-oss-120b",
-          conversationHistory: [],
-        };
-        
-        const fetchRes = await fetch(`${apiUrl}/api/agent/chat`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(fetchPayload),
-        });
-        
-        if (fetchRes.ok) {
-          const fetchData = await fetchRes.json();
-          const fetchedContent = fetchData.response || fetchData.functionExecutions?.[0]?.result || "";
-          
-          userMessage = `You have access to the following source material from "${selectedSourceMaterial.title}":
-
----
-${fetchedContent}
----
-
-Based on this source material and the user's text: "${inputText}", write a good Facebook post message. Only provide the post message text, nothing else.`;
-        }
-      } catch (err) {
-        console.error("Failed to fetch source material content:", err);
-        // Fall back to original message if fetch fails
-        userMessage = `Based on the source material from "${selectedSourceMaterial.title}" at ${selectedSourceMaterial.url} and this text: "${inputText}", recommend a good Facebook post message. Just provide the recommended message text, nothing else.`;
-      }
+url=${selectedSourceMaterial.url}
+EXPLANATION: Fetching the source material content to analyze for the Facebook post.
+MESSAGE: You have retrieved the source material content. Now analyze it along with the user's request: "${inputText}". Generate a compelling Facebook post recommendation based on the fetched content. Return ONLY the final post message text, nothing else.`;
     }
 
     const payload = {
@@ -271,12 +234,7 @@ Based on this source material and the user's text: "${inputText}", write a good 
     let userMessage = "";
     
     if (selectedImageDockerUrl && selectedSourceMaterial) {
-      userMessage = `ACTION: fetch_page
-PARAMETERS:
-url=${selectedSourceMaterial.url}
-EXPLANATION: Fetching and analyzing source material.
-
-Then ACTION: post_image_to_facebook
+      userMessage = `ACTION: post_image_to_facebook
 PARAMETERS:
 image_url=${selectedImageDockerUrl}
 caption=${messageToPost}
@@ -288,12 +246,7 @@ image_url=${selectedImageDockerUrl}
 caption=${messageToPost}
 EXPLANATION: Posting an image with caption to Facebook.`;
     } else if (selectedSourceMaterial) {
-      userMessage = `Based on the source material "${selectedSourceMaterial.title}" (${selectedSourceMaterial.contentType}), create an engaging Facebook post. 
-
-Material URL: ${selectedSourceMaterial.url}
-User context: ${messageToPost}
-
-Post this message to our Facebook page.`;
+      userMessage = `Post this message to our Facebook page: "${messageToPost}"`;
     } else {
       userMessage = `Post this message to our Facebook page: "${messageToPost}"`;
     }

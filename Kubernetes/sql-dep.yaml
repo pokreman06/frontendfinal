@@ -33,7 +33,7 @@ spec:
       volumes:
       - name: postgres-storage
         persistentVolumeClaim:
-          claimName: postgres-pvc
+          claimName: postgres-pvc-v2
       - name: init-scripts
         configMap:
           name: postgres-init
