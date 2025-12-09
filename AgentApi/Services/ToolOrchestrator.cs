@@ -276,9 +276,12 @@ namespace AgentApi.Services
                     _logger.LogInformation("AI returned ACTION format in content");
 
                     var toolCalls = ExtractToolCalls(assistantMessage.Content ?? "", allTools);
-                    var messageAfterAction = _toolCallExtractor.ExtractMessageAfterAction(assistantMessage.Content ?? "");
-                    
-                    _logger.LogInformation("ExtractMessageAfterAction returned: {Message}", messageAfterAction ?? "NULL");
+                    var messageAfterAction = _toolCallExtractor.ExtractMessageAfterAction(
+                        assistantMessage.Content ?? "");
+
+                    _logger.LogInformation(
+                        "ExtractMessageAfterAction returned: {Message}",
+                        messageAfterAction ?? "NULL");
 
                     if (toolCalls.Count > 0)
                     {
