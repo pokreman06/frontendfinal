@@ -3,8 +3,14 @@ kind: Ingress
 metadata:
   name: client-ingress
   namespace: nate-agent
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - client.nagent.duckdns.org
+    secretName: client-tls-secret
   rules:
   - host: "client.nagent.duckdns.org"
     http:

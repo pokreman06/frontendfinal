@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql; // Make sure you have Npgsql package installed
 using Contexts;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using AgentApi.Services;
@@ -28,7 +29,9 @@ builder.Services.AddCors(options =>
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
                 "https://client.nagent.duckdns.org",
-                "http://client.nagent.duckdns.org"
+                "http://client.nagent.duckdns.org",
+                "https://api.nagent.duckdns.org",
+                "http://api.nagent.duckdns.org"
               )
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -97,6 +100,14 @@ var app = builder.Build();
 // Log the resolved MCP service URL
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("MCP service URL resolved to: {McpServiceUrl}", mcpServiceUrl);
+
+// Enable ForwardedHeaders middleware to handle X-Forwarded-* headers from reverse proxies (NGINX ingress)
+// This must come before CORS and Authentication
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
+                       Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
 
 // Enable CORS using the policy defined above - MUST be early in the pipeline
 app.UseCors("LocalDev");

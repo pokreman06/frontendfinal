@@ -76,3 +76,12 @@ spec:
               value: "http://mcp-service:8000"
             - name: IMAGE_SERVICE_URL
               value: "http://api-service:8080"
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: DOTNET_RUNNING_IN_CONTAINER
+              value: "true"
+            # Configure to use X-Forwarded headers from NGINX ingress
+            - name: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+              value: "true"
