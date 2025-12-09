@@ -328,14 +328,16 @@ namespace AgentApi.Services
                         // If there's a MESSAGE after the ACTION, loop it back to the AI for processing with the tool results
                         if (!string.IsNullOrEmpty(messageAfterAction))
                         {
-                            _logger.LogInformation("Found MESSAGE after ACTION, looping back to AI with tool results: {Message}", messageAfterAction);
-                            
+                            _logger.LogInformation(
+                                "Found MESSAGE after ACTION, looping back to AI with tool results: {Message}",
+                                messageAfterAction);
+
                             // Combine tool results with the message so the AI has context
                             var enrichedMessage = $"Tool Results:\n{string.Join("\n", toolResults)}\n\n{messageAfterAction}";
-                            
+
                             // Add original assistant message to history (with original ACTION content)
                             messages.Add(assistantMessage);
-                            
+
                             // Add enriched message as user follow-up
                             var userFollowUp = new Message
                             {

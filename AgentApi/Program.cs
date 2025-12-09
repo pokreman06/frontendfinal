@@ -107,8 +107,8 @@ logger.LogInformation("MCP service URL resolved to: {McpServiceUrl}", mcpService
 // This must come before CORS and Authentication
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
-                       Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
+        Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
 });
 
 // Enable CORS using the policy defined above - MUST be early in the pipeline

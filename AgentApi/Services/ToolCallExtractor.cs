@@ -15,11 +15,11 @@ namespace AgentApi.Services
     public interface IToolCallExtractor
     {
         List<(string toolName, Dictionary<string, object> args)> ExtractToolCalls(
-            string content,
+                string content,
             List<FunctionTool> availableTools);
 
         bool IsParameterlessFunction(string functionName);
-        
+
         string? ExtractMessageAfterAction(string content);
     }
 
@@ -275,10 +275,10 @@ namespace AgentApi.Services
             try
             {
                 _logger.LogDebug("ExtractMessageAfterAction: Processing content length: {Length}", content.Length);
-                
+
                 var lines = content.Split(new[] { "\n", "\r\n" }, StringSplitOptions.None);
                 _logger.LogDebug("ExtractMessageAfterAction: Found {LineCount} lines", lines.Length);
-                
+
                 var messageLines = new List<string>();
                 bool inActionBlock = false;
                 bool foundMessage = false;
@@ -286,7 +286,10 @@ namespace AgentApi.Services
                 for (int i = 0; i < lines.Length; i++)
                 {
                     var trimmed = lines[i].Trim();
-                    _logger.LogDebug("ExtractMessageAfterAction: Line {Index}: {Line}", i, trimmed.Substring(0, Math.Min(80, trimmed.Length)));
+                    _logger.LogDebug(
+                        "ExtractMessageAfterAction: Line {Index}: {Line}",
+                        i,
+                        trimmed.Substring(0, Math.Min(80, trimmed.Length)));
 
                     // Start tracking when we find ACTION:
                     if (trimmed.StartsWith("ACTION:", StringComparison.OrdinalIgnoreCase))
@@ -302,8 +305,10 @@ namespace AgentApi.Services
                         _logger.LogDebug("ExtractMessageAfterAction: Found EXPLANATION at line {Index}", i);
                         // Check if MESSAGE is on the same line as EXPLANATION
                         var explanationContent = trimmed.Substring("EXPLANATION:".Length).Trim();
-                        _logger.LogDebug("ExtractMessageAfterAction: EXPLANATION content: {Content}", explanationContent.Substring(0, Math.Min(100, explanationContent.Length)));
-                        
+                        _logger.LogDebug(
+                            "ExtractMessageAfterAction: EXPLANATION content: {Content}",
+                            explanationContent.Substring(0, Math.Min(100, explanationContent.Length)));
+
                         if (explanationContent.StartsWith("MESSAGE:", StringComparison.OrdinalIgnoreCase))
                         {
                             // MESSAGE is on same line as EXPLANATION
