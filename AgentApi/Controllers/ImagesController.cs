@@ -230,7 +230,7 @@ namespace AgentApi.Controllers
 
                 // Provide both browser-accessible URL and Docker-network URL
                 var browserBaseUrl = $"{Request.Scheme}://{Request.Host}";
-                var dockerBaseUrl = "http://web:8080";
+                var dockerBaseUrl = "http://api-service:8080";
 
                 var images = _context.SavedImages
                     .Where(i => i.UserEmail == userEmail)
