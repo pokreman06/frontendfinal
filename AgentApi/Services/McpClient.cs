@@ -41,7 +41,7 @@ namespace AgentApi.Services
             }
         }
 
-        public async Task<List<FunctionTool>> GetAvailableToolsAsync()
+        public Task<List<FunctionTool>> GetAvailableToolsAsync()
         {
             // For HTTP-based service, we return a hardcoded list of available tools
             var tools = new List<FunctionTool>
@@ -68,7 +68,7 @@ namespace AgentApi.Services
             };
 
             _logger.LogInformation("Loaded {Count} Facebook MCP tools", tools.Count);
-            return tools;
+            return Task.FromResult(tools);
         }
 
         public async Task<string> ExecuteToolAsync(string toolName, Dictionary<string, object> parameters)

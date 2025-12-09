@@ -74,7 +74,9 @@ var mcpServiceUrl = Environment.GetEnvironmentVariable("MCP_SERVICE_URL") ?? "ht
 if (!migrateOnly)
 {
     builder.Services.AddHttpClient(); // Add HttpClientFactory for AuthController
-    builder.Services.AddSingleton(new PromptSearcher(Environment.GetEnvironmentVariable("GOOGLE_API"), Environment.GetEnvironmentVariable("CUSTOM_SEARCH_ENGINE")));
+    var googleApi = Environment.GetEnvironmentVariable("GOOGLE_API") ?? string.Empty;
+    var customSearchEngine = Environment.GetEnvironmentVariable("CUSTOM_SEARCH_ENGINE") ?? string.Empty;
+    builder.Services.AddSingleton(new PromptSearcher(googleApi, customSearchEngine));
     builder.Services.AddScoped<WebPageFetcher>();
     builder.Services.AddScoped<IToolCallExtractor, ToolCallExtractor>();
     builder.Services.AddScoped<IToolOrchestrator, ToolOrchestrator>();
